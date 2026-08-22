@@ -6,3 +6,4 @@ dist
 .zvault
 .env
 .env.local
+docs
