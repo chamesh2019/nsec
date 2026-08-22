@@ -1,0 +1,8 @@
+node_modules
+dist
+.turbo
+.next
+*.log
+.zvault
+.env
+.env.local

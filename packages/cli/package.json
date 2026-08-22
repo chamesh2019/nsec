@@ -1,0 +1,24 @@
+{
+  "name": "@zvault/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "zvault": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --banner.js '#!/usr/bin/env node'",
+    "dev": "tsup src/index.ts --format esm --dts --watch --banner.js '#!/usr/bin/env node'",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@zvault/core": "workspace:*",
+    "@zvault/crypto": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}

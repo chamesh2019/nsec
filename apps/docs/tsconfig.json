@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "moduleResolution": "bundler"
+  },
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mdx"]
+}
