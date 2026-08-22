@@ -4,6 +4,7 @@ export interface KeyringCredentials {
   keyId: string;
   privateKey: string;
   publicKey?: string;
+  email?: string;
   serverUrl?: string;
   token?: string;
   createdAt?: string;

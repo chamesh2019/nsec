@@ -30,20 +30,18 @@ export async function executeRegister(
 
   // 2. Securely store private keys in OS Keyring or 0o600 file
   const store = await createCredentialStore({ mode: storageMode });
-  await store.saveCredentials(project, {
+  const credentialsPayload = {
     keyId: `key_${Date.now()}`,
+    email,
+    serverUrl,
     privateKey: userKeys.encryption.privateKey,
     publicKey: userKeys.signing.publicKey,
-    token: userKeys.signing.privateKey
-  });
+    token: userKeys.signing.privateKey,
+    createdAt: new Date().toISOString()
+  };
 
-  // Also save under 'default' so other projects on this machine can find the user's identity
-  await store.saveCredentials('default', {
-    keyId: `key_${Date.now()}`,
-    privateKey: userKeys.encryption.privateKey,
-    publicKey: userKeys.signing.publicKey,
-    token: userKeys.signing.privateKey
-  });
+  await store.saveCredentials(project, credentialsPayload);
+  await store.saveCredentials('default', credentialsPayload);
 
   // 3. Register public keys on server
   const client = new NullSecApiClient({

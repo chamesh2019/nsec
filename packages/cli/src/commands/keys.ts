@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { loadConfig, NullSecApiClient, type NullSecConfig } from '@nsec/core';
+import { loadConfig, findConfigFile, NullSecApiClient } from '@nsec/core';
 import { createCredentialStore, type StorageMode } from '@nsec/keyring';
 
 export interface KeysCommandOptions {
@@ -22,42 +22,47 @@ export async function executeWhoami(options: KeysCommandOptions = {}): Promise<{
   encryptionKeyFingerprint?: string;
   userEmail?: string;
 }> {
-  let project = 'default';
-  let serverUrl = 'http://localhost:4000';
+  const cwd = options.cwd || process.cwd();
+  let project = '(none - outside project directory)';
+  let serverUrl: string | undefined;
   let storage: StorageMode = options.storage || 'keyring';
 
-  try {
-    const config = await loadConfig(options.cwd || process.cwd());
-    project = config.project;
-    serverUrl = options.serverUrl || config.serverUrl;
-    storage = options.storage || config.storage || 'keyring';
-  } catch {}
+  const configFile = await findConfigFile(cwd);
+  if (configFile) {
+    try {
+      const config = await loadConfig(cwd);
+      project = config.project;
+      serverUrl = options.serverUrl || config.serverUrl;
+      storage = options.storage || config.storage || 'keyring';
+    } catch {}
+  }
 
   const store = await createCredentialStore({ mode: storage });
-  let creds = await store.getCredentials(project);
-  if (!creds) {
-    creds = await store.getCredentials('default');
-  }
+  let creds = (configFile ? await store.getCredentials(project) : null) || (await store.getCredentials('default'));
 
   if (!creds) {
     throw new Error(
       `No cryptographic keys found on this machine.\n` +
-      `Run \x1b[36mnsec register <your-email> --server ${serverUrl}\x1b[0m to generate keys.`
+      `Run \x1b[36mnsec register <your-email> --server ${serverUrl || 'https://nsec.chames.dev'}\x1b[0m to generate keys.`
     );
   }
 
+  serverUrl = serverUrl || creds.serverUrl || options.serverUrl || 'https://nsec.chames.dev';
   const signingFp = creds.publicKey ? computeKeyFingerprint(creds.publicKey) : undefined;
   const encFp = creds.privateKey ? computeKeyFingerprint(creds.privateKey) : undefined;
+  let userEmail: string | undefined = creds.email;
 
-  let userEmail: string | undefined;
-  try {
-    const client = new NullSecApiClient({
-      serverUrl,
-      signingKeys: { privateKey: creds.token || creds.privateKey, publicKey: creds.publicKey || '' }
-    });
-    const user = await client.getUser(creds.publicKey || '');
-    userEmail = user.email;
-  } catch {}
+  // Verify / lookup email against server if available
+  if (!userEmail && creds.publicKey) {
+    try {
+      const client = new NullSecApiClient({
+        serverUrl,
+        signingKeys: { privateKey: creds.token || creds.privateKey, publicKey: creds.publicKey || '' }
+      });
+      const user = await client.getUser(creds.publicKey);
+      userEmail = user.email;
+    } catch {}
+  }
 
   return {
     project,
@@ -65,7 +70,7 @@ export async function executeWhoami(options: KeysCommandOptions = {}): Promise<{
     storage,
     signingKeyFingerprint: signingFp,
     encryptionKeyFingerprint: encFp,
-    userEmail
+    userEmail: userEmail || '(unregistered or offline)'
   };
 }
 
