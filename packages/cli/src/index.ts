@@ -140,5 +140,16 @@ export function buildCliProgram(): Command {
   return program;
 }
 
-const program = buildCliProgram();
-program.parseAsync(process.argv);
+const isCliEntry =
+  process.argv[1] &&
+  !process.argv[1].includes('test') &&
+  (process.argv[1].endsWith('nsec') ||
+   process.argv[1].endsWith('nullsec') ||
+   process.argv[1].endsWith('zvault') ||
+   process.argv[1].endsWith('index.js') ||
+   process.argv[1].endsWith('index.ts'));
+
+if (isCliEntry) {
+  const program = buildCliProgram();
+  program.parseAsync(process.argv);
+}
