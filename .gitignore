@@ -6,4 +6,6 @@ dist
 .zvault
 .env
 .env.local
+.wrangler
+apps/server-cloudflare/
 docs
