@@ -16,7 +16,8 @@
   "dependencies": {
     "@zvault/core": "workspace:*",
     "@zvault/crypto": "workspace:*",
-    "@zvault/keyring": "workspace:*"
+    "@zvault/keyring": "workspace:*",
+    "commander": "^15.0.0"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
