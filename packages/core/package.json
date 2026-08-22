@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "test": "node --import tsx --test 'test/**/*.test.ts'",
     "clean": "rm -rf dist"
   },
   "dependencies": {

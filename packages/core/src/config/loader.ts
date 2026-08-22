@@ -62,7 +62,10 @@ export async function loadConfig(
 
   const parseResult = ZVaultConfigSchema.safeParse(merged);
   if (!parseResult.success) {
-    const errorMsg = parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
+    const issues = (parseResult.error as any).issues || (parseResult.error as any).errors || [];
+    const errorMsg = issues.length > 0
+      ? issues.map((e: any) => `${e.path?.join('.') || 'config'}: ${e.message}`).join('; ')
+      : parseResult.error.message;
     throw new ConfigError(`Invalid zvault configuration: ${errorMsg}`);
   }
 
