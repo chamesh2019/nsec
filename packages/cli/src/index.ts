@@ -140,8 +140,5 @@ export function buildCliProgram(): Command {
   return program;
 }
 
-// Direct CLI invocation
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const program = buildCliProgram();
-  program.parseAsync(process.argv);
-}
+const program = buildCliProgram();
+program.parseAsync(process.argv);
