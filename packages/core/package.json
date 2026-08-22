@@ -12,7 +12,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@zvault/crypto": "workspace:*"
+    "@zvault/crypto": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
