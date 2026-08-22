@@ -14,6 +14,7 @@ export interface KeyringStorage {
   saveCredentials(account: string, credentials: KeyringCredentials): Promise<void>;
   getCredentials(account: string): Promise<KeyringCredentials | null>;
   deleteCredentials(account: string): Promise<boolean>;
+  listAccounts(): Promise<string[]>;
   isAvailable(): Promise<boolean>;
 }
 

@@ -5,6 +5,7 @@ export default defineConfig({
   format: ['esm'],
   dts: true,
   clean: true,
+  external: ['@napi-rs/keyring'],
   banner: {
     js: '#!/usr/bin/env node'
   }

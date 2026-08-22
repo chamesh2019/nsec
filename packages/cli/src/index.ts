@@ -3,6 +3,8 @@ import {
   executeRun,
   executeInit,
   executeRegister,
+  executeWhoami,
+  executeListKeys,
   executeSet,
   executeGet,
   executeAddMember,
@@ -67,7 +69,60 @@ export function buildCliProgram(): Command {
       }
     });
 
-  // 3. nsec init
+  // 3. nsec whoami
+  program
+    .command('whoami')
+    .description('Display current local identity, server connection, and key fingerprints')
+    .option('-s, --server <url>', 'Server URL to check')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (options) => {
+      try {
+        const res = await executeWhoami({
+          serverUrl: options.server,
+          storage: options.storage
+        });
+        console.log(`\n\x1b[1mNullSec Identity Status:\x1b[0m`);
+        console.log(`  • Email:          \x1b[32m${res.userEmail || '(unregistered or offline)'}\x1b[0m`);
+        console.log(`  • Project:        ${res.project}`);
+        console.log(`  • Server:         ${res.serverUrl}`);
+        console.log(`  • Storage:        ${res.storage}`);
+        if (res.signingKeyFingerprint) {
+          console.log(`  • Signing Key:    SHA256:${res.signingKeyFingerprint} (Ed25519)`);
+        }
+        if (res.encryptionKeyFingerprint) {
+          console.log(`  • Encryption Key: SHA256:${res.encryptionKeyFingerprint} (RSA-4096)`);
+        }
+        console.log('');
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 4. nsec keys (list stored credentials on this machine)
+  program
+    .command('keys')
+    .description('List all project identities stored in local OS Keyring')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (options) => {
+      try {
+        const keys = await executeListKeys({ storage: options.storage });
+        console.log(`\n\x1b[1mStored Project Keys on this machine:\x1b[0m`);
+        if (keys.length === 0) {
+          console.log(`  (No keys stored yet. Run "nsec register" or "nsec init" to create keys)\n`);
+        } else {
+          for (const k of keys) {
+            console.log(`  • \x1b[36m${k}\x1b[0m`);
+          }
+          console.log('');
+        }
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 5. nsec init
   program
     .command('init')
     .description('Initialize a new NullSec project, create local keypairs, and write configuration')

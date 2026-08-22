@@ -13,6 +13,8 @@ describe('buildCliProgram', () => {
     const commandNames = program.commands.map((c) => c.name());
     assert.ok(commandNames.includes('run'));
     assert.ok(commandNames.includes('register'));
+    assert.ok(commandNames.includes('whoami'));
+    assert.ok(commandNames.includes('keys'));
     assert.ok(commandNames.includes('init'));
     assert.ok(commandNames.includes('set'));
     assert.ok(commandNames.includes('get'));

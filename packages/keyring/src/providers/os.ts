@@ -20,6 +20,23 @@ export class OSKeyringProvider implements KeyringStorage {
     }
   }
 
+  private async getAccountIndex(): Promise<string[]> {
+    try {
+      const entry = new AsyncEntry(this.service, '__nullsec_index__');
+      const data = await entry.getPassword();
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private async saveAccountIndex(accounts: string[]): Promise<void> {
+    try {
+      const entry = new AsyncEntry(this.service, '__nullsec_index__');
+      await entry.setPassword(JSON.stringify(Array.from(new Set(accounts))));
+    } catch {}
+  }
+
   async saveCredentials(account: string, credentials: KeyringCredentials): Promise<void> {
     if (!credentials || !credentials.keyId || !credentials.privateKey) {
       throw new InvalidCredentialsError('Both keyId and privateKey are required.');
@@ -27,6 +44,12 @@ export class OSKeyringProvider implements KeyringStorage {
     const payload = JSON.stringify({ ...credentials });
     const entry = new AsyncEntry(this.service, account);
     await entry.setPassword(payload);
+
+    const accounts = await this.getAccountIndex();
+    if (!accounts.includes(account)) {
+      accounts.push(account);
+      await this.saveAccountIndex(accounts);
+    }
   }
 
   async getCredentials(account: string): Promise<KeyringCredentials | null> {
@@ -44,9 +67,16 @@ export class OSKeyringProvider implements KeyringStorage {
     try {
       const entry = new AsyncEntry(this.service, account);
       await entry.deletePassword();
+      const accounts = await this.getAccountIndex();
+      const filtered = accounts.filter((a) => a !== account);
+      await this.saveAccountIndex(filtered);
       return true;
     } catch {
       return false;
     }
+  }
+
+  async listAccounts(): Promise<string[]> {
+    return this.getAccountIndex();
   }
 }

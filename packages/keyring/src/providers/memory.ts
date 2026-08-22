@@ -21,6 +21,10 @@ export class MemoryStorageProvider implements KeyringStorage {
     return this.store.delete(account);
   }
 
+  async listAccounts(): Promise<string[]> {
+    return Array.from(this.store.keys());
+  }
+
   clear(): void {
     this.store.clear();
   }

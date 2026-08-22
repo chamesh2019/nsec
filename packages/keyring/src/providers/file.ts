@@ -61,4 +61,9 @@ export class FileStorageProvider implements KeyringStorage {
     await this.writeStore(store);
     return true;
   }
+
+  async listAccounts(): Promise<string[]> {
+    const store = await this.readStore();
+    return Object.keys(store);
+  }
 }

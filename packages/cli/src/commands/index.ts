@@ -4,3 +4,4 @@ export * from './register.js';
 export * from './secrets.js';
 export * from './member.js';
 export * from './token.js';
+export * from './keys.js';
