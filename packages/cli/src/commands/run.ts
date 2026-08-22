@@ -1,11 +1,12 @@
-import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@nsec/core';
+import { loadConfig, NullSecApiClient, type NullSecConfig } from '@nsec/core';
 import { decryptProjectKeyWithUserKey, decryptProjectSecrets } from '@nsec/crypto';
 import { createCredentialStore, type KeyringStorage } from '@nsec/keyring';
 import { runCommandWithSecrets } from '../runner.js';
+import { getRequiredCredentials } from './auth-helper.js';
 
 export interface ExecuteRunOptions {
   env?: string;
-  configOverride?: Partial<ZVaultConfig>;
+  configOverride?: Partial<NullSecConfig>;
   credentialStore?: KeyringStorage;
   serviceToken?: string;
   signingKeys?: { privateKey: string; publicKey: string };
@@ -19,9 +20,9 @@ export async function executeRun(options: ExecuteRunOptions): Promise<number> {
 
   let decryptedSecrets: Record<string, string> = {};
 
-  const serviceToken = options.serviceToken || process.env.ZVAULT_TOKEN;
+  const serviceToken = options.serviceToken || process.env.NULLSEC_TOKEN || process.env.NSEC_TOKEN || process.env.ZVAULT_TOKEN;
   if (serviceToken) {
-    const client = new ZVaultApiClient({
+    const client = new NullSecApiClient({
       serverUrl: config.serverUrl,
       serviceToken
     });
@@ -31,19 +32,17 @@ export async function executeRun(options: ExecuteRunOptions): Promise<number> {
 
   // User credentials flow
   const storage = options.credentialStore || (await createCredentialStore({ mode: config.storage }));
-  const creds = await storage.getCredentials(config.project);
-
-  if (!creds && !options.encryptionPrivateKey) {
-    throw new Error(
-      `No credentials found for project "${config.project}". Please run "zvault init" or "zvault login" first.`
-    );
+  
+  let creds;
+  if (!options.encryptionPrivateKey) {
+    creds = await getRequiredCredentials(config.project, storage, config.serverUrl);
   }
 
   const encPrivateKey = options.encryptionPrivateKey || creds?.privateKey!;
   const signPrivKey = options.signingKeys?.privateKey || creds?.token || encPrivateKey;
   const signPubKey = options.signingKeys?.publicKey || creds?.publicKey || '';
 
-  const client = new ZVaultApiClient({
+  const client = new NullSecApiClient({
     serverUrl: config.serverUrl,
     signingKeys: { privateKey: signPrivKey, publicKey: signPubKey }
   });

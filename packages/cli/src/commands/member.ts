@@ -1,11 +1,12 @@
-import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@nsec/core';
+import { loadConfig, NullSecApiClient, type NullSecConfig } from '@nsec/core';
 import { decryptProjectKeyWithUserKey, encryptProjectKeyForUser } from '@nsec/crypto';
 import { createCredentialStore, type KeyringStorage } from '@nsec/keyring';
+import { getRequiredCredentials } from './auth-helper.js';
 
 export interface MemberCommandOptions {
   role?: 'admin' | 'developer' | 'viewer';
   environments?: string[];
-  configOverride?: Partial<ZVaultConfig>;
+  configOverride?: Partial<NullSecConfig>;
   credentialStore?: KeyringStorage;
   cwd?: string;
 }
@@ -20,12 +21,9 @@ export async function executeAddMember(
   const role = options.role || 'developer';
 
   const store = options.credentialStore || (await createCredentialStore({ mode: config.storage }));
-  const creds = await store.getCredentials(config.project);
-  if (!creds) {
-    throw new Error(`No credentials found for project "${config.project}".`);
-  }
+  const creds = await getRequiredCredentials(config.project, store, config.serverUrl);
 
-  const client = new ZVaultApiClient({
+  const client = new NullSecApiClient({
     serverUrl: config.serverUrl,
     signingKeys: { privateKey: creds.token || creds.privateKey, publicKey: creds.publicKey || '' }
   });
