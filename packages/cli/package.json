@@ -9,8 +9,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --banner.js '#!/usr/bin/env node'",
-    "dev": "tsup src/index.ts --format esm --dts --watch --banner.js '#!/usr/bin/env node'",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "node --import tsx --test 'test/**/*.test.ts'",
     "clean": "rm -rf dist"
   },
   "dependencies": {
