@@ -13,8 +13,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@fastify/cors": "^11.3.0",
     "@zvault/core": "workspace:*",
-    "@zvault/crypto": "workspace:*"
+    "@zvault/crypto": "workspace:*",
+    "fastify": "^5.12.1"
   },
   "devDependencies": {
     "tsup": "^8.0.0",
