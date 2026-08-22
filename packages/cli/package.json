@@ -1,13 +1,20 @@
 {
   "name": "@zvault/cli",
   "version": "0.1.0",
-  "private": true,
+  "description": "Zero-knowledge secret vault CLI for secure process injection and management",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "zvault": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

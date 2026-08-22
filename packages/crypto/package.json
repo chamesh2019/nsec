@@ -1,11 +1,18 @@
 {
   "name": "@zvault/crypto",
   "version": "0.1.0",
-  "private": true,
+  "description": "Zero-knowledge cryptographic primitives for zvault",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
