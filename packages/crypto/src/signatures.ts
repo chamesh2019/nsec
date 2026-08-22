@@ -18,6 +18,14 @@ function normalizePem(pem: string): string {
   return pem.replace(/\r\n/g, '\n').trim();
 }
 
+function pemToSpkiDer(pem: string): Uint8Array {
+  const b64 = pem
+    .replace(/-----BEGIN [^-]+-----/, '')
+    .replace(/-----END [^-]+-----/, '')
+    .replace(/\s+/g, '');
+  return Buffer.from(b64, 'base64');
+}
+
 export function signPayload<T = unknown>(
   payload: T,
   privateKeyPem: string,
@@ -48,6 +56,48 @@ export function signPayload<T = unknown>(
     publicKey: normalizedPub,
     timestamp
   };
+}
+
+export async function verifySignatureAsync<T = unknown>(signedMessage: SignedMessage<T>): Promise<boolean> {
+  if (!signedMessage || !signedMessage.signature || !signedMessage.publicKey) {
+    return false;
+  }
+
+  try {
+    const normalizedPub = normalizePem(signedMessage.publicKey);
+    const canonicalData = canonicalizeJson({
+      payload: signedMessage.payload,
+      timestamp: signedMessage.timestamp
+    });
+    const dataBuffer = Buffer.from(canonicalData, 'utf-8');
+    const signatureBuffer = Buffer.from(signedMessage.signature, 'base64');
+
+    // 1. Try WebCrypto (standard on Cloudflare Workers & modern Node)
+    if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.subtle) {
+      try {
+        const der = pemToSpkiDer(normalizedPub);
+        const webKey = await globalThis.crypto.subtle.importKey(
+          'spki',
+          der,
+          { name: 'Ed25519' },
+          false,
+          ['verify']
+        );
+        const valid = await globalThis.crypto.subtle.verify(
+          'Ed25519',
+          webKey,
+          signatureBuffer,
+          dataBuffer
+        );
+        if (valid) return true;
+      } catch {}
+    }
+
+    // 2. Fallback to Node crypto
+    return verifySignature(signedMessage);
+  } catch {
+    return false;
+  }
 }
 
 export function verifySignature<T = unknown>(signedMessage: SignedMessage<T>): boolean {

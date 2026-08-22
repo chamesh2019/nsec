@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { verifySignature } from '@nsec/crypto';
+import { verifySignatureAsync, verifySignature } from '@nsec/crypto';
 import type { DatabaseAdapter, StoredServiceTokenRecord } from '../db/types.js';
 import type { UserDTO } from '@nsec/core';
 
@@ -74,7 +74,7 @@ export async function verifyAuthHeaders(
     return { authenticated: false, error: 'Malformed public key header' };
   }
 
-  const isValid = verifySignature({
+  const isValid = await verifySignatureAsync({
     payload: body || {},
     signature,
     publicKey: publicKeyPem,

@@ -50,7 +50,7 @@ export async function executeSet(
   const secretsPayload = encryptProjectSecrets(currentSecrets, projectKey);
 
   // Lookup user info to get user id for projectKeys mapping
-  const user = await client.getUser(creds.publicKey || '');
+  const user = await client.getUser(creds.email || creds.publicKey || '');
   const encryptedKey = encryptProjectKeyForUser(projectKey, user.publicKeys.encryptionKey);
 
   const res = await client.uploadSecrets({

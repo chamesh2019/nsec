@@ -59,7 +59,10 @@ app.post('/api/v1/auth/register', async (c) => {
 app.get('/api/v1/users/:idOrEmail', async (c) => {
   const db = new D1DatabaseAdapter(c.env.DB);
   const idOrEmail = c.req.param('idOrEmail');
-  const user = (await db.getUserById(idOrEmail)) || (await db.getUserByEmail(idOrEmail));
+  const user =
+    (await db.getUserById(idOrEmail)) ||
+    (await db.getUserByEmail(idOrEmail)) ||
+    (await db.getUserBySigningKey(idOrEmail));
 
   if (!user) {
     return c.json({ error: 'NotFoundError', message: 'User not found' }, 404);
