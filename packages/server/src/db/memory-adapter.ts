@@ -1,5 +1,5 @@
 import type { DatabaseAdapter, StoredSecretsRecord, StoredServiceTokenRecord } from './types.js';
-import type { UserDTO, ProjectDTO, ProjectMemberDTO } from '@zvault/core';
+import type { UserDTO, ProjectDTO, ProjectMemberDTO } from '@chamesh2020/core';
 
 export class MemoryDatabaseAdapter implements DatabaseAdapter {
   private readonly users = new Map<string, UserDTO>();

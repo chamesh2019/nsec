@@ -5,7 +5,7 @@ import type {
   ServiceTokenDTO,
   EncryptedSecretsPayloadDTO,
   EncryptedProjectKeyDTO
-} from '@zvault/core';
+} from '@chamesh2020/core';
 
 export interface StoredSecretsRecord {
   projectId: string;

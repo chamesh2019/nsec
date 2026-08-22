@@ -1,5 +1,5 @@
 {
-  "name": "@zvault/cli",
+  "name": "@chamesh2020/cli",
   "version": "0.1.0",
   "description": "Zero-knowledge secret vault CLI for secure process injection and management",
   "license": "MIT",
@@ -22,9 +22,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@zvault/core": "workspace:*",
-    "@zvault/crypto": "workspace:*",
-    "@zvault/keyring": "workspace:*",
+    "@chamesh2020/core": "workspace:*",
+    "@chamesh2020/crypto": "workspace:*",
+    "@chamesh2020/keyring": "workspace:*",
     "commander": "^15.0.0"
   },
   "devDependencies": {

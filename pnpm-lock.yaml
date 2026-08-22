@@ -51,13 +51,13 @@ importers:
 
   packages/cli:
     dependencies:
-      '@zvault/core':
+      '@chamesh2020/core':
         specifier: workspace:*
         version: link:../core
-      '@zvault/crypto':
+      '@chamesh2020/crypto':
         specifier: workspace:*
         version: link:../crypto
-      '@zvault/keyring':
+      '@chamesh2020/keyring':
         specifier: workspace:*
         version: link:../keyring
       commander:
@@ -73,7 +73,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@zvault/crypto':
+      '@chamesh2020/crypto':
         specifier: workspace:*
         version: link:../crypto
       zod:
@@ -111,10 +111,10 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@zvault/core':
+      '@chamesh2020/core':
         specifier: workspace:*
         version: link:../core
-      '@zvault/crypto':
+      '@chamesh2020/crypto':
         specifier: workspace:*
         version: link:../crypto
     devDependencies:
@@ -127,15 +127,15 @@ importers:
 
   packages/server:
     dependencies:
+      '@chamesh2020/core':
+        specifier: workspace:*
+        version: link:../core
+      '@chamesh2020/crypto':
+        specifier: workspace:*
+        version: link:../crypto
       '@fastify/cors':
         specifier: ^11.3.0
         version: 11.3.0
-      '@zvault/core':
-        specifier: workspace:*
-        version: link:../core
-      '@zvault/crypto':
-        specifier: workspace:*
-        version: link:../crypto
       fastify:
         specifier: ^5.12.1
         version: 5.12.1

@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { UploadSecretsInputSchema, type SecretsResponseDTO } from '@zvault/core';
+import { UploadSecretsInputSchema, type SecretsResponseDTO } from '@chamesh2020/core';
 import type { DatabaseAdapter } from '../db/types.js';
 import { verifyAuthHeaders } from '../middleware/auth.js';
 

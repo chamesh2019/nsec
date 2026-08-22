@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateUserKeyPair, signPayload } from '@zvault/crypto';
+import { generateUserKeyPair, signPayload } from '@chamesh2020/crypto';
 import { MemoryDatabaseAdapter } from '../src/db/index.js';
 import { verifyAuthHeaders } from '../src/middleware/auth.js';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@zvault/sdk",
+  "name": "@chamesh2020/sdk",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@zvault/core": "workspace:*",
-    "@zvault/crypto": "workspace:*"
+    "@chamesh2020/core": "workspace:*",
+    "@chamesh2020/crypto": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

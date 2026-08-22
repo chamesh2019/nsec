@@ -1,4 +1,4 @@
-// SDK class stub for @zvault/sdk
+// SDK class stub for @chamesh2020/sdk
 export class ZVault {
   private project: string;
   private env: string;

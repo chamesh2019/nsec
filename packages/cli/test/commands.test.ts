@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { executeInit, executeSet, executeGet } from '../src/commands/index.js';
-import { createCredentialStore } from '@zvault/keyring';
+import { createCredentialStore } from '@chamesh2020/keyring';
 
 describe('CLI Helper Commands', () => {
   let tempDir: string;

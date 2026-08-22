@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import * as core from '../src/index.js';
 
-describe('@zvault/core exports', () => {
+describe('@chamesh2020/core exports', () => {
   it('exports schemas, config loaders, client, and errors', () => {
     assert.ok(core.ZVaultConfigSchema);
     assert.ok(core.loadConfig);

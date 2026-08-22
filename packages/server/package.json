@@ -1,5 +1,5 @@
 {
-  "name": "@zvault/server",
+  "name": "@chamesh2020/server",
   "version": "0.1.0",
   "description": "Zero-knowledge REST API server for zvault",
   "license": "MIT",
@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.3.0",
-    "@zvault/core": "workspace:*",
-    "@zvault/crypto": "workspace:*",
+    "@chamesh2020/core": "workspace:*",
+    "@chamesh2020/crypto": "workspace:*",
     "fastify": "^5.12.1"
   },
   "devDependencies": {

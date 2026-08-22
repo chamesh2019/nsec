@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
-import { verifySignature } from '@zvault/crypto';
+import { verifySignature } from '@chamesh2020/crypto';
 import type { DatabaseAdapter, StoredServiceTokenRecord } from '../db/types.js';
-import type { UserDTO } from '@zvault/core';
+import type { UserDTO } from '@chamesh2020/core';
 
 const MAX_TIMESTAMP_AGE_MS = 60_000; // 60 seconds
 

@@ -1,4 +1,4 @@
-import { signPayload } from '@zvault/crypto';
+import { signPayload } from '@chamesh2020/crypto';
 import {
   ProjectSchema,
   SecretsResponseSchema,
