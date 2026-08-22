@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
-import { AddMemberInputSchema, type ProjectDTO } from '@chamesh2020/core';
+import { AddMemberInputSchema, type ProjectDTO } from '@nsec/core';
 import type { DatabaseAdapter } from '../db/types.js';
 import { verifyAuthHeaders } from '../middleware/auth.js';
 

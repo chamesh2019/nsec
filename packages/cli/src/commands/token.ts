@@ -1,5 +1,5 @@
-import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@chamesh2020/core';
-import { createCredentialStore, type KeyringStorage } from '@chamesh2020/keyring';
+import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@nsec/core';
+import { createCredentialStore, type KeyringStorage } from '@nsec/keyring';
 
 export interface TokenCommandOptions {
   env?: string;

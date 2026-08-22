@@ -51,13 +51,13 @@ importers:
 
   packages/cli:
     dependencies:
-      '@chamesh2020/core':
+      '@nsec/core':
         specifier: workspace:*
         version: link:../core
-      '@chamesh2020/crypto':
+      '@nsec/crypto':
         specifier: workspace:*
         version: link:../crypto
-      '@chamesh2020/keyring':
+      '@nsec/keyring':
         specifier: workspace:*
         version: link:../keyring
       commander:
@@ -73,7 +73,7 @@ importers:
 
   packages/core:
     dependencies:
-      '@chamesh2020/crypto':
+      '@nsec/crypto':
         specifier: workspace:*
         version: link:../crypto
       zod:
@@ -111,10 +111,10 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@chamesh2020/core':
+      '@nsec/core':
         specifier: workspace:*
         version: link:../core
-      '@chamesh2020/crypto':
+      '@nsec/crypto':
         specifier: workspace:*
         version: link:../crypto
     devDependencies:
@@ -127,15 +127,15 @@ importers:
 
   packages/server:
     dependencies:
-      '@chamesh2020/core':
-        specifier: workspace:*
-        version: link:../core
-      '@chamesh2020/crypto':
-        specifier: workspace:*
-        version: link:../crypto
       '@fastify/cors':
         specifier: ^11.3.0
         version: 11.3.0
+      '@nsec/core':
+        specifier: workspace:*
+        version: link:../core
+      '@nsec/crypto':
+        specifier: workspace:*
+        version: link:../crypto
       fastify:
         specifier: ^5.12.1
         version: 5.12.1

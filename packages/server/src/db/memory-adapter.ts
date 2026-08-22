@@ -1,5 +1,5 @@
 import type { DatabaseAdapter, StoredSecretsRecord, StoredServiceTokenRecord } from './types.js';
-import type { UserDTO, ProjectDTO, ProjectMemberDTO } from '@chamesh2020/core';
+import type { UserDTO, ProjectDTO, ProjectMemberDTO } from '@nsec/core';
 
 export class MemoryDatabaseAdapter implements DatabaseAdapter {
   private readonly users = new Map<string, UserDTO>();

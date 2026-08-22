@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
 import type { DatabaseAdapter } from '../db/types.js';
 import { verifyAuthHeaders, hashToken } from '../middleware/auth.js';
-import type { ServiceTokenDTO } from '@chamesh2020/core';
+import type { ServiceTokenDTO } from '@nsec/core';
 
 export const tokenRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {
   const { db } = opts;

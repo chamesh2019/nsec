@@ -5,7 +5,7 @@ import type {
   ServiceTokenDTO,
   EncryptedSecretsPayloadDTO,
   EncryptedProjectKeyDTO
-} from '@chamesh2020/core';
+} from '@nsec/core';
 
 export interface StoredSecretsRecord {
   projectId: string;

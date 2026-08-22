@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateUserKeyPair, generateProjectKey, encryptProjectSecrets, encryptProjectKeyForUser } from '@chamesh2020/crypto';
-import { ZVaultApiClient } from '@chamesh2020/core';
+import { generateUserKeyPair, generateProjectKey, encryptProjectSecrets, encryptProjectKeyForUser } from '@nsec/crypto';
+import { ZVaultApiClient } from '@nsec/core';
 import { createServer } from '../src/server.js';
 import { MemoryDatabaseAdapter } from '../src/db/index.js';
 

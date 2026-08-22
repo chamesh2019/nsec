@@ -1,6 +1,6 @@
-import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@chamesh2020/core';
-import { decryptProjectKeyWithUserKey, encryptProjectKeyForUser } from '@chamesh2020/crypto';
-import { createCredentialStore, type KeyringStorage } from '@chamesh2020/keyring';
+import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@nsec/core';
+import { decryptProjectKeyWithUserKey, encryptProjectKeyForUser } from '@nsec/crypto';
+import { createCredentialStore, type KeyringStorage } from '@nsec/keyring';
 
 export interface MemberCommandOptions {
   role?: 'admin' | 'developer' | 'viewer';

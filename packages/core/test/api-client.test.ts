@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { generateUserKeyPair, verifySignature } from '@chamesh2020/crypto';
+import { generateUserKeyPair, verifySignature } from '@nsec/crypto';
 import { ZVaultApiClient } from '../src/client/index.js';
 
 describe('ZVaultApiClient', () => {

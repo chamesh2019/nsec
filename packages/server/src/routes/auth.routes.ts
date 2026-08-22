@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import crypto from 'node:crypto';
-import { RegisterUserInputSchema, type UserDTO } from '@chamesh2020/core';
+import { RegisterUserInputSchema, type UserDTO } from '@nsec/core';
 import type { DatabaseAdapter } from '../db/types.js';
 
 export const authRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {

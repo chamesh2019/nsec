@@ -1,5 +1,5 @@
 {
-  "name": "@chamesh2020/crypto",
+  "name": "@nsec/crypto",
   "version": "0.1.0",
   "description": "Zero-knowledge cryptographic primitives for zvault",
   "license": "MIT",

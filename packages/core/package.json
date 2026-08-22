@@ -1,5 +1,5 @@
 {
-  "name": "@chamesh2020/core",
+  "name": "@nsec/core",
   "version": "0.1.0",
   "description": "Core schemas, configuration parser, and typed API client for zvault",
   "license": "MIT",
@@ -20,7 +20,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@chamesh2020/crypto": "workspace:*",
+    "@nsec/crypto": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

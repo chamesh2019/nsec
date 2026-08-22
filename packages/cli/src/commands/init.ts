@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { generateUserKeyPair } from '@chamesh2020/crypto';
-import { createCredentialStore, type StorageMode } from '@chamesh2020/keyring';
-import { ZVaultApiClient, type ZVaultConfig } from '@chamesh2020/core';
+import { generateUserKeyPair } from '@nsec/crypto';
+import { createCredentialStore, type StorageMode } from '@nsec/keyring';
+import { ZVaultApiClient, type ZVaultConfig } from '@nsec/core';
 
 export interface ExecuteInitOptions {
   project?: string;

@@ -6,8 +6,8 @@ import {
   generateProjectKey,
   encryptProjectSecrets,
   encryptProjectKeyForUser
-} from '@chamesh2020/crypto';
-import { createCredentialStore } from '@chamesh2020/keyring';
+} from '@nsec/crypto';
+import { createCredentialStore } from '@nsec/keyring';
 import http from 'node:http';
 
 describe('executeRun Command', () => {

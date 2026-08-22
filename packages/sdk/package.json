@@ -1,5 +1,5 @@
 {
-  "name": "@chamesh2020/sdk",
+  "name": "@nsec/sdk",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@chamesh2020/core": "workspace:*",
-    "@chamesh2020/crypto": "workspace:*"
+    "@nsec/core": "workspace:*",
+    "@nsec/crypto": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

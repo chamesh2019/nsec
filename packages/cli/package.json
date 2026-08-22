@@ -1,5 +1,5 @@
 {
-  "name": "@chamesh2020/cli",
+  "name": "@nsec/cli",
   "version": "0.1.0",
   "description": "Zero-knowledge secret vault CLI for secure process injection and management",
   "license": "MIT",
@@ -22,9 +22,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@chamesh2020/core": "workspace:*",
-    "@chamesh2020/crypto": "workspace:*",
-    "@chamesh2020/keyring": "workspace:*",
+    "@nsec/core": "workspace:*",
+    "@nsec/crypto": "workspace:*",
+    "@nsec/keyring": "workspace:*",
     "commander": "^15.0.0"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
-import { verifySignature } from '@chamesh2020/crypto';
+import { verifySignature } from '@nsec/crypto';
 import type { DatabaseAdapter, StoredServiceTokenRecord } from '../db/types.js';
-import type { UserDTO } from '@chamesh2020/core';
+import type { UserDTO } from '@nsec/core';
 
 const MAX_TIMESTAMP_AGE_MS = 60_000; // 60 seconds
 

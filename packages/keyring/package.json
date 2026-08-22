@@ -1,5 +1,5 @@
 {
-  "name": "@chamesh2020/keyring",
+  "name": "@nsec/keyring",
   "version": "0.1.0",
   "description": "OS Keyring and secure credential storage for zvault",
   "license": "MIT",

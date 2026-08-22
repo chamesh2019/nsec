@@ -1,12 +1,12 @@
-import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@chamesh2020/core';
+import { loadConfig, ZVaultApiClient, type ZVaultConfig } from '@nsec/core';
 import {
   generateProjectKey,
   encryptProjectSecrets,
   decryptProjectSecrets,
   encryptProjectKeyForUser,
   decryptProjectKeyWithUserKey
-} from '@chamesh2020/crypto';
-import { createCredentialStore, type KeyringStorage } from '@chamesh2020/keyring';
+} from '@nsec/crypto';
+import { createCredentialStore, type KeyringStorage } from '@nsec/keyring';
 
 export interface SecretCommandOptions {
   env?: string;
