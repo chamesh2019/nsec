@@ -35,23 +35,35 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
   }
 
   async saveUser(user: UserDTO): Promise<void> {
-    await this.db
-      .prepare(
-        `INSERT INTO users (id, email, signing_key, encryption_key, created_at)
-         VALUES (?, ?, ?, ?, ?)
-         ON CONFLICT(id) DO UPDATE SET
-           email = excluded.email,
-           signing_key = excluded.signing_key,
-           encryption_key = excluded.encryption_key`
-      )
-      .bind(
-        user.id,
-        user.email,
-        user.publicKeys.signingKey,
-        user.publicKeys.encryptionKey,
-        user.createdAt
-      )
-      .run();
+    const cleanSigningKey = user.publicKeys.signingKey.replace(/\r\n/g, '\n').trim();
+    const cleanEncKey = user.publicKeys.encryptionKey.replace(/\r\n/g, '\n').trim();
+
+    const existing = await this.getUserByEmail(user.email);
+    if (existing) {
+      await this.db
+        .prepare(
+          `UPDATE users SET
+             signing_key = ?,
+             encryption_key = ?
+           WHERE LOWER(email) = LOWER(?)`
+        )
+        .bind(cleanSigningKey, cleanEncKey, user.email)
+        .run();
+    } else {
+      await this.db
+        .prepare(
+          `INSERT INTO users (id, email, signing_key, encryption_key, created_at)
+           VALUES (?, ?, ?, ?, ?)`
+        )
+        .bind(
+          user.id,
+          user.email,
+          cleanSigningKey,
+          cleanEncKey,
+          user.createdAt
+        )
+        .run();
+    }
   }
 
   async getUserById(id: string): Promise<UserDTO | null> {
@@ -91,9 +103,9 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
   }
 
   async getUserBySigningKey(signingKeyPem: string): Promise<UserDTO | null> {
-    const cleanKey = signingKeyPem.trim();
+    const cleanKey = signingKeyPem.replace(/\r\n/g, '\n').trim();
     const row = await this.db
-      .prepare(`SELECT * FROM users WHERE trim(signing_key) = ?`)
+      .prepare(`SELECT * FROM users WHERE trim(replace(signing_key, char(13), '')) = ?`)
       .bind(cleanKey)
       .first<any>();
 
