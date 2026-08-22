@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import {
   executeRun,
   executeInit,
+  executeRegister,
   executeSet,
   executeGet,
   executeAddMember,
@@ -45,10 +46,31 @@ export function buildCliProgram(): Command {
       }
     });
 
-  // 2. zvault init
+  // 2. nsec register <email> / nsec login <email>
+  program
+    .command('register <email>')
+    .alias('login')
+    .description('Generate local cryptographic keys in OS Keyring and register your public key with the server')
+    .option('-s, --server <url>', 'NullSec Server URL')
+    .option('--storage <mode>', 'Credential storage mode (keyring | file)')
+    .action(async (email, options) => {
+      try {
+        const res = await executeRegister(email, {
+          serverUrl: options.server,
+          storage: options.storage
+        });
+        console.log(`\x1b[32m✔ Registered identity "${res.email}" with ${res.serverUrl}\x1b[0m`);
+        console.log(`\x1b[32m✔ Private keys saved in local ${options.storage || 'keyring'}\x1b[0m`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 3. nsec init
   program
     .command('init')
-    .description('Initialize a new zvault project, create local keypairs, and write configuration')
+    .description('Initialize a new NullSec project, create local keypairs, and write configuration')
     .option('-p, --project <name>', 'Project identifier')
     .option('-s, --server <url>', 'Server URL')
     .option('-e, --email <email>', 'User identity email')
@@ -61,7 +83,7 @@ export function buildCliProgram(): Command {
           email: options.email,
           storage: options.storage
         });
-        console.log(`\x1b[32m✔ Initialized zvault project "${res.project}"\x1b[0m`);
+        console.log(`\x1b[32m✔ Initialized NullSec project "${res.project}"\x1b[0m`);
       } catch (err: unknown) {
         console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
         process.exit(1);
