@@ -1,6 +1,6 @@
 {
   "name": "@nsec/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NullSec CLI - Zero-knowledge secret vault for secure process injection and management",
   "license": "MIT",
   "type": "module",
