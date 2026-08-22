@@ -18,8 +18,8 @@ export function buildCliProgram(): Command {
   const program = new Command();
 
   program
-    .name('zvault')
-    .description('Zero-knowledge secret vault CLI for secure process injection and management')
+    .name('nsec')
+    .description('NullSec - Zero-knowledge secret vault for secure process injection and team management')
     .version(CLI_VERSION);
 
   // 1. zvault run -- <command...>

@@ -42,10 +42,21 @@ export async function verifyAuthHeaders(
     return { authenticated: true, serviceToken: tokenRecord };
   }
 
-  // 2. Check for Ed25519 Request Signature
-  const signature = getHeader('x-zvault-signature');
-  const publicKeyBase64 = getHeader('x-zvault-public-key');
-  const timestampStr = getHeader('x-zvault-timestamp');
+  // 2. Check for Ed25519 Request Signature (Support NullSec, Nsec, and Zvault headers)
+  const signature =
+    getHeader('x-nullsec-signature') ||
+    getHeader('x-nsec-signature') ||
+    getHeader('x-zvault-signature');
+
+  const publicKeyBase64 =
+    getHeader('x-nullsec-public-key') ||
+    getHeader('x-nsec-public-key') ||
+    getHeader('x-zvault-public-key');
+
+  const timestampStr =
+    getHeader('x-nullsec-timestamp') ||
+    getHeader('x-nsec-timestamp') ||
+    getHeader('x-zvault-timestamp');
 
   if (!signature || !publicKeyBase64 || !timestampStr) {
     return { authenticated: false, error: 'Missing authentication headers' };

@@ -17,7 +17,7 @@ describe('CLI Helper Commands', () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  it('executes init and generates valid zvault.config.json', async () => {
+  it('executes init and generates valid nullsec.config.json', async () => {
     const res = await executeInit({
       project: 'test-init-service',
       storage: 'memory',
@@ -25,7 +25,7 @@ describe('CLI Helper Commands', () => {
     });
 
     assert.equal(res.project, 'test-init-service');
-    const configPath = path.join(tempDir, 'zvault.config.json');
+    const configPath = path.join(tempDir, 'nullsec.config.json');
     const content = JSON.parse(await fs.readFile(configPath, 'utf-8'));
     assert.equal(content.project, 'test-init-service');
     assert.equal(content.defaultEnvironment, 'development');

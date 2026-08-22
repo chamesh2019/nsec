@@ -23,7 +23,7 @@ export interface ApiClientOptions {
   serviceToken?: string;
 }
 
-export class ZVaultApiClient {
+export class NullSecApiClient {
   private readonly serverUrl: string;
   private readonly signingKeys?: { privateKey: string; publicKey: string };
   private readonly serviceToken?: string;
@@ -49,8 +49,16 @@ export class ZVaultApiClient {
         this.signingKeys.privateKey,
         this.signingKeys.publicKey
       );
+      const b64Key = Buffer.from(signed.publicKey, 'utf-8').toString('base64');
+      headers['X-NullSec-Signature'] = signed.signature;
+      headers['X-NullSec-Public-Key'] = b64Key;
+      headers['X-NullSec-Timestamp'] = String(signed.timestamp);
+      // Backwards compatible headers
+      headers['X-Nsec-Signature'] = signed.signature;
+      headers['X-Nsec-Public-Key'] = b64Key;
+      headers['X-Nsec-Timestamp'] = String(signed.timestamp);
       headers['X-Zvault-Signature'] = signed.signature;
-      headers['X-Zvault-Public-Key'] = Buffer.from(signed.publicKey, 'utf-8').toString('base64');
+      headers['X-Zvault-Public-Key'] = b64Key;
       headers['X-Zvault-Timestamp'] = String(signed.timestamp);
     }
 
@@ -135,3 +143,5 @@ export class ZVaultApiClient {
     return ServiceTokenSchema.parse(data);
   }
 }
+
+export const ZVaultApiClient = NullSecApiClient;

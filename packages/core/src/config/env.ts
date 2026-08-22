@@ -1,19 +1,26 @@
-import type { ZVaultConfigInput } from '../schemas/config.schema.js';
+import type { NullSecConfigInput } from '../schemas/config.schema.js';
 
-export function resolveEnvOverrides(): Partial<ZVaultConfigInput> {
-  const overrides: Partial<ZVaultConfigInput> = {};
+export function resolveEnvOverrides(): Partial<NullSecConfigInput> {
+  const overrides: Partial<NullSecConfigInput> = {};
 
-  if (process.env.ZVAULT_PROJECT) {
-    overrides.project = process.env.ZVAULT_PROJECT;
+  const project = process.env.NULLSEC_PROJECT || process.env.NSEC_PROJECT || process.env.ZVAULT_PROJECT;
+  if (project) {
+    overrides.project = project;
   }
-  if (process.env.ZVAULT_ENV) {
-    overrides.defaultEnvironment = process.env.ZVAULT_ENV;
+
+  const env = process.env.NULLSEC_ENV || process.env.NSEC_ENV || process.env.ZVAULT_ENV;
+  if (env) {
+    overrides.defaultEnvironment = env;
   }
-  if (process.env.ZVAULT_SERVER_URL) {
-    overrides.serverUrl = process.env.ZVAULT_SERVER_URL;
+
+  const serverUrl = process.env.NULLSEC_SERVER_URL || process.env.NSEC_SERVER_URL || process.env.ZVAULT_SERVER_URL;
+  if (serverUrl) {
+    overrides.serverUrl = serverUrl;
   }
-  if (process.env.ZVAULT_STORAGE && ['keyring', 'file', 'memory'].includes(process.env.ZVAULT_STORAGE)) {
-    overrides.storage = process.env.ZVAULT_STORAGE as 'keyring' | 'file' | 'memory';
+
+  const storage = process.env.NULLSEC_STORAGE || process.env.NSEC_STORAGE || process.env.ZVAULT_STORAGE;
+  if (storage && ['keyring', 'file', 'memory'].includes(storage)) {
+    overrides.storage = storage as 'keyring' | 'file' | 'memory';
   }
 
   return overrides;

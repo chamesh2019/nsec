@@ -1,13 +1,15 @@
 {
   "name": "@nsec/server",
   "version": "0.1.0",
-  "description": "Zero-knowledge REST API server for zvault",
+  "description": "Zero-knowledge REST API server for NullSec",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
+    "nsec-server": "./dist/index.js",
+    "nullsec-server": "./dist/index.js",
     "zvault-server": "./dist/index.js"
   },
   "files": [

@@ -6,13 +6,13 @@ export class OSKeyringProvider implements KeyringStorage {
   public readonly name: StorageMode = 'keyring';
   private readonly service: string;
 
-  constructor(service = 'zvault') {
+  constructor(service = 'nullsec') {
     this.service = service;
   }
 
   async isAvailable(): Promise<boolean> {
     try {
-      const probeEntry = new AsyncEntry(this.service, '__zvault_probe__');
+      const probeEntry = new AsyncEntry(this.service, '__nullsec_probe__');
       await probeEntry.getPassword();
       return true;
     } catch {

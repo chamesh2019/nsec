@@ -7,7 +7,7 @@ describe('buildCliProgram', () => {
     const program = buildCliProgram();
     program.exitOverride();
 
-    assert.equal(program.name(), 'zvault');
+    assert.equal(program.name(), 'nsec');
     assert.equal(program.version(), CLI_VERSION);
 
     const commandNames = program.commands.map((c) => c.name());

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const ZVaultConfigSchema = z.object({
+export const NullSecConfigSchema = z.object({
   project: z
     .string()
     .min(1, 'Project name is required')
@@ -12,5 +12,10 @@ export const ZVaultConfigSchema = z.object({
   storage: z.enum(['keyring', 'file', 'memory']).default('keyring')
 });
 
-export type ZVaultConfig = z.infer<typeof ZVaultConfigSchema>;
-export type ZVaultConfigInput = z.input<typeof ZVaultConfigSchema>;
+export const ZVaultConfigSchema = NullSecConfigSchema;
+
+export type NullSecConfig = z.infer<typeof NullSecConfigSchema>;
+export type NullSecConfigInput = z.input<typeof NullSecConfigSchema>;
+
+export type ZVaultConfig = NullSecConfig;
+export type ZVaultConfigInput = NullSecConfigInput;

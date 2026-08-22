@@ -1,10 +1,12 @@
 {
   "name": "@nsec/cli",
   "version": "0.1.0",
-  "description": "Zero-knowledge secret vault CLI for secure process injection and management",
+  "description": "NullSec CLI - Zero-knowledge secret vault for secure process injection and management",
   "license": "MIT",
   "type": "module",
   "bin": {
+    "nsec": "./dist/index.js",
+    "nullsec": "./dist/index.js",
     "zvault": "./dist/index.js"
   },
   "main": "./dist/index.js",

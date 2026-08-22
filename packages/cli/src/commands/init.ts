@@ -63,7 +63,7 @@ export async function executeInit(options: ExecuteInitOptions = {}): Promise<{ p
     storage: storageMode
   };
 
-  const configPath = path.join(cwd, 'zvault.config.json');
+  const configPath = path.join(cwd, 'nullsec.config.json');
   await fs.writeFile(configPath, JSON.stringify(configContent, null, 2), 'utf-8');
 
   return { project: projectName, email };

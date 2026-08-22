@@ -8,7 +8,7 @@ export class FileStorageProvider implements KeyringStorage {
   private readonly filePath: string;
 
   constructor(customPath?: string) {
-    this.filePath = customPath || path.join(os.homedir(), '.zvault', 'credentials.json');
+    this.filePath = customPath || path.join(os.homedir(), '.nullsec', 'credentials.json');
   }
 
   async isAvailable(): Promise<boolean> {

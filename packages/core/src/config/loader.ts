@@ -1,10 +1,18 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ZVaultConfigSchema, type ZVaultConfig, type ZVaultConfigInput } from '../schemas/config.schema.js';
+import { NullSecConfigSchema, type NullSecConfig, type NullSecConfigInput } from '../schemas/config.schema.js';
 import { resolveEnvOverrides } from './env.js';
 import { ConfigError } from '../errors.js';
 
 const CONFIG_FILES = [
+  'nullsec.config.json',
+  '.nullsecrc.json',
+  '.nullsecrc',
+  '.nullsec/config.json',
+  'nsec.config.json',
+  '.nsecrc.json',
+  '.nsecrc',
+  '.nsec/config.json',
   'zvault.config.json',
   '.zvaultrc.json',
   '.zvaultrc',
@@ -39,8 +47,8 @@ export async function findConfigFile(startDir: string = process.cwd()): Promise<
 
 export async function loadConfig(
   cwd: string = process.cwd(),
-  explicitOverrides?: Partial<ZVaultConfigInput>
-): Promise<ZVaultConfig> {
+  explicitOverrides?: Partial<NullSecConfigInput>
+): Promise<NullSecConfig> {
   let fileConfig: Record<string, unknown> = {};
   const configFile = await findConfigFile(cwd);
 
@@ -60,13 +68,13 @@ export async function loadConfig(
     ...explicitOverrides
   };
 
-  const parseResult = ZVaultConfigSchema.safeParse(merged);
+  const parseResult = NullSecConfigSchema.safeParse(merged);
   if (!parseResult.success) {
     const issues = (parseResult.error as any).issues || (parseResult.error as any).errors || [];
     const errorMsg = issues.length > 0
       ? issues.map((e: any) => `${e.path?.join('.') || 'config'}: ${e.message}`).join('; ')
       : parseResult.error.message;
-    throw new ConfigError(`Invalid zvault configuration: ${errorMsg}`);
+    throw new ConfigError(`Invalid NullSec configuration: ${errorMsg}`);
   }
 
   return parseResult.data;
