@@ -136,17 +136,17 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
     }
   }
 
-  async getProject(id: string): Promise<ProjectDTO | null> {
+  async getProject(idOrName: string): Promise<ProjectDTO | null> {
     const row = await this.db
-      .prepare(`SELECT * FROM projects WHERE id = ?`)
-      .bind(id)
+      .prepare(`SELECT * FROM projects WHERE id = ? OR name = ?`)
+      .bind(idOrName, idOrName)
       .first<any>();
 
     if (!row) return null;
 
     const membersResult = await this.db
       .prepare(`SELECT * FROM project_members WHERE project_id = ?`)
-      .bind(id)
+      .bind(row.id)
       .all<any>();
 
     const members: ProjectMemberDTO[] = (membersResult.results || []).map((m: any) => ({

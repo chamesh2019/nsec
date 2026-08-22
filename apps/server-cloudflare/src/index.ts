@@ -81,7 +81,7 @@ app.post('/api/v1/projects', async (c) => {
     return c.json({ error: 'ValidationError', message: 'Project name is required' }, 400);
   }
 
-  const projectId = `proj_${crypto.randomBytes(8).toString('hex')}`;
+  const projectId = body.id || body.name;
   const environments = body.environments || ['development', 'staging', 'production'];
 
   const newProject: ProjectDTO = {

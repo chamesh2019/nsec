@@ -20,6 +20,7 @@ describe('CLI Helper Commands', () => {
   it('executes init and generates valid nullsec.config.json', async () => {
     const res = await executeInit({
       project: 'test-init-service',
+      email: 'test@example.com',
       storage: 'memory',
       cwd: tempDir
     });
