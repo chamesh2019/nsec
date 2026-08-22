@@ -1,6 +1,6 @@
 {
   "name": "@nsec/keyring",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OS Keyring and secure credential storage for zvault",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@nsec/server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Zero-knowledge REST API server for NullSec",
   "license": "MIT",
   "type": "module",
