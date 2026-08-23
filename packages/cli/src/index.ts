@@ -82,18 +82,35 @@ export function buildCliProgram(): Command {
           serverUrl: options.server,
           storage: options.storage
         });
-        console.log(`\n\x1b[1mNullSec Identity Status:\x1b[0m`);
-        console.log(`  • Email:          \x1b[32m${res.userEmail || '(unregistered or offline)'}\x1b[0m`);
-        console.log(`  • Project:        ${res.project}`);
-        console.log(`  • Server:         ${res.serverUrl}`);
-        console.log(`  • Storage:        ${res.storage}`);
-        if (res.signingKeyFingerprint) {
-          console.log(`  • Signing Key:    SHA256:${res.signingKeyFingerprint} (Ed25519)`);
+
+        if (res.isMultiServer && res.identities.length > 1) {
+          console.log(`\n\x1b[1mNullSec Registered Server Identities (${res.identities.length}):\x1b[0m`);
+          for (const id of res.identities) {
+            console.log(`\n  \x1b[1m• Server:\x1b[0m          \x1b[36m${id.serverUrl}\x1b[0m`);
+            console.log(`    Email:           \x1b[32m${id.userEmail || '(unregistered or offline)'}\x1b[0m`);
+            console.log(`    Storage:         ${id.storage}`);
+            if (id.signingKeyFingerprint) {
+              console.log(`    Signing Key:     SHA256:${id.signingKeyFingerprint} (Ed25519)`);
+            }
+            if (id.encryptionKeyFingerprint) {
+              console.log(`    Encryption Key:  SHA256:${id.encryptionKeyFingerprint} (RSA-4096)`);
+            }
+          }
+          console.log('');
+        } else {
+          console.log(`\n\x1b[1mNullSec Identity Status:\x1b[0m`);
+          console.log(`  • Email:          \x1b[32m${res.userEmail || '(unregistered or offline)'}\x1b[0m`);
+          console.log(`  • Project:        ${res.project}`);
+          console.log(`  • Server:         ${res.serverUrl}`);
+          console.log(`  • Storage:        ${res.storage}`);
+          if (res.signingKeyFingerprint) {
+            console.log(`  • Signing Key:    SHA256:${res.signingKeyFingerprint} (Ed25519)`);
+          }
+          if (res.encryptionKeyFingerprint) {
+            console.log(`  • Encryption Key: SHA256:${res.encryptionKeyFingerprint} (RSA-4096)`);
+          }
+          console.log('');
         }
-        if (res.encryptionKeyFingerprint) {
-          console.log(`  • Encryption Key: SHA256:${res.encryptionKeyFingerprint} (RSA-4096)`);
-        }
-        console.log('');
       } catch (err: unknown) {
         console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
         process.exit(1);
@@ -108,7 +125,7 @@ export function buildCliProgram(): Command {
     .action(async (options) => {
       try {
         const keys = await executeListKeys({ storage: options.storage });
-        console.log(`\n\x1b[1mStored Project Keys on this machine:\x1b[0m`);
+        console.log(`\n\x1b[1mStored Server Identities on this machine:\x1b[0m`);
         if (keys.length === 0) {
           console.log(`  (No keys stored yet. Run "nsec register" or "nsec init" to create keys)\n`);
         } else {

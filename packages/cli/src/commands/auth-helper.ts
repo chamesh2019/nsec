@@ -1,23 +1,33 @@
 import type { KeyringStorage, StoredCredentials } from '@nsec/keyring';
+import { serverAccountKey } from './url-helpers.js';
 
 export async function getRequiredCredentials(
   project: string,
   store: KeyringStorage,
   serverUrl?: string
 ): Promise<StoredCredentials> {
-  // 1. Try project-specific credentials
-  let creds = await store.getCredentials(project);
+  let creds: StoredCredentials | null = null;
 
-  // 2. Fall back to global default identity on this machine
+  // 1. Try server-scoped credentials if serverUrl is provided
+  if (serverUrl) {
+    creds = await store.getCredentials(serverAccountKey(serverUrl));
+  }
+
+  // 2. Try legacy project-specific credentials
+  if (!creds && project) {
+    creds = await store.getCredentials(project);
+  }
+
+  // 3. Fall back to global default identity on this machine
   if (!creds) {
     creds = await store.getCredentials('default');
   }
 
-  // 3. If still missing, throw an actionable guide
+  // 4. If still missing, throw an actionable guide
   if (!creds) {
     const serverHint = serverUrl ? ` --server ${serverUrl}` : '';
     throw new Error(
-      `No cryptographic keys found for project "${project}".\n\n` +
+      `No cryptographic keys found for server "${serverUrl || 'default'}" (project "${project}").\n\n` +
       `Generate your keys first by running:\n` +
       `  \x1b[36mnsec register <your-email>${serverHint}\x1b[0m\n` +
       `or initialize this project:\n` +
@@ -27,3 +37,4 @@ export async function getRequiredCredentials(
 
   return creds;
 }
+

@@ -1,14 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { generateUserKeyPair } from '@nsec/crypto';
-import { createCredentialStore, type StorageMode } from '@nsec/keyring';
+import { createCredentialStore, type StorageMode, type KeyringStorage } from '@nsec/keyring';
 import { NullSecApiClient, type NullSecConfig } from '@nsec/core';
+import { normalizeServerUrl, serverAccountKey } from './url-helpers.js';
 
 export interface ExecuteInitOptions {
   project?: string;
   serverUrl?: string;
   email?: string;
   storage?: StorageMode;
+  credentialStore?: KeyringStorage;
   cwd?: string;
 }
 
@@ -16,16 +18,19 @@ export async function executeInit(options: ExecuteInitOptions = {}): Promise<{ p
   const cwd = options.cwd || process.cwd();
   const projectName = options.project || path.basename(cwd).toLowerCase().replace(/[^a-z0-9-_]/g, '-');
   const storageMode = options.storage || 'keyring';
-  const store = await createCredentialStore({ mode: storageMode });
+  const store = options.credentialStore || (await createCredentialStore({ mode: storageMode }));
 
-  // 1. Check for existing default identity on this machine
+  // 1. Determine serverUrl and check for existing identity for this server or default
   const defaultCreds = await store.getCredentials('default');
-  const email = options.email || defaultCreds?.email;
-  const serverUrl = options.serverUrl || defaultCreds?.serverUrl || 'https://nsec.chames.dev';
+  const serverUrl = normalizeServerUrl(options.serverUrl || defaultCreds?.serverUrl || 'https://nsec.chames.dev');
+  const serverKey = serverAccountKey(serverUrl);
+  const existingCreds = (await store.getCredentials(serverKey)) || defaultCreds;
+
+  const email = options.email || existingCreds?.email;
 
   if (!email) {
     throw new Error(
-      `No registered identity found on this machine.\n\n` +
+      `No registered identity found on this machine for server "${serverUrl}".\n\n` +
       `Please register your identity with the server first:\n` +
       `  \x1b[36mnsec register <your-email> --server ${serverUrl}\x1b[0m\n\n` +
       `Or initialize with your email:\n` +
@@ -38,11 +43,11 @@ export async function executeInit(options: ExecuteInitOptions = {}): Promise<{ p
   let encryptionPrivateKey: string;
   let encryptionPublicKey: string;
 
-  if (defaultCreds && (!options.email || options.email === defaultCreds.email)) {
+  if (existingCreds && (!options.email || options.email === existingCreds.email)) {
     // Reuse existing registered identity on this machine
-    signingPrivateKey = defaultCreds.token || defaultCreds.privateKey;
-    signingPublicKey = defaultCreds.publicKey || '';
-    encryptionPrivateKey = defaultCreds.privateKey;
+    signingPrivateKey = existingCreds.token || existingCreds.privateKey;
+    signingPublicKey = existingCreds.publicKey || '';
+    encryptionPrivateKey = existingCreds.privateKey;
     encryptionPublicKey = '';
   } else {
     // Generate new keypair if registering a new email
@@ -81,7 +86,7 @@ export async function executeInit(options: ExecuteInitOptions = {}): Promise<{ p
     }
   }
 
-  // 3. Save credentials for this project
+  // 3. Save server identity credentials (no redundant per-project key duplication)
   const credentialsPayload = {
     keyId: `key_${Date.now()}`,
     email,
@@ -92,7 +97,7 @@ export async function executeInit(options: ExecuteInitOptions = {}): Promise<{ p
     createdAt: new Date().toISOString()
   };
 
-  await store.saveCredentials(projectName, credentialsPayload);
+  await store.saveCredentials(serverKey, credentialsPayload);
   if (!defaultCreds) {
     await store.saveCredentials('default', credentialsPayload);
   }

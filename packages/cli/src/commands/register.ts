@@ -1,11 +1,14 @@
 import { generateUserKeyPair } from '@nsec/crypto';
-import { createCredentialStore, type StorageMode } from '@nsec/keyring';
+import { createCredentialStore, type StorageMode, type KeyringStorage } from '@nsec/keyring';
 import { NullSecApiClient, loadConfig } from '@nsec/core';
+import { normalizeServerUrl, serverAccountKey } from './url-helpers.js';
 
 export interface RegisterCommandOptions {
   serverUrl?: string;
   storage?: StorageMode;
+  credentialStore?: KeyringStorage;
   project?: string;
+  skipServerSync?: boolean;
 }
 
 export async function executeRegister(
@@ -29,36 +32,40 @@ export async function executeRegister(
   const userKeys = await generateUserKeyPair();
 
   // 2. Securely store private keys in OS Keyring or 0o600 file
-  const store = await createCredentialStore({ mode: storageMode });
+  const store = options.credentialStore || (await createCredentialStore({ mode: storageMode }));
+  const normServerUrl = normalizeServerUrl(serverUrl);
+  const serverKey = serverAccountKey(normServerUrl);
   const credentialsPayload = {
     keyId: `key_${Date.now()}`,
     email,
-    serverUrl,
+    serverUrl: normServerUrl,
     privateKey: userKeys.encryption.privateKey,
     publicKey: userKeys.signing.publicKey,
     token: userKeys.signing.privateKey,
     createdAt: new Date().toISOString()
   };
 
-  await store.saveCredentials(project, credentialsPayload);
+  await store.saveCredentials(serverKey, credentialsPayload);
   await store.saveCredentials('default', credentialsPayload);
 
   // 3. Register public keys on server
-  const client = new NullSecApiClient({
-    serverUrl,
-    signingKeys: {
-      privateKey: userKeys.signing.privateKey,
-      publicKey: userKeys.signing.publicKey
-    }
-  });
+  if (!options.skipServerSync) {
+    const client = new NullSecApiClient({
+      serverUrl,
+      signingKeys: {
+        privateKey: userKeys.signing.privateKey,
+        publicKey: userKeys.signing.publicKey
+      }
+    });
 
-  await client.registerUser({
-    email,
-    publicKeys: {
-      signingKey: userKeys.signing.publicKey,
-      encryptionKey: userKeys.encryption.publicKey
-    }
-  });
+    await client.registerUser({
+      email,
+      publicKeys: {
+        signingKey: userKeys.signing.publicKey,
+        encryptionKey: userKeys.encryption.publicKey
+      }
+    });
+  }
 
-  return { email, serverUrl };
+  return { email, serverUrl: normServerUrl };
 }
