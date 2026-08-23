@@ -8,13 +8,14 @@ import {
   executeSet,
   executeGet,
   executeAddMember,
-  executeCreateToken
+  executeCreateToken,
+  executeMigrate
 } from './commands/index.js';
 
 export * from './runner.js';
 export * from './commands/index.js';
 
-export const CLI_VERSION = '0.1.0';
+export const CLI_VERSION = '0.2.0';
 
 export function buildCliProgram(): Command {
   const program = new Command();
@@ -175,6 +176,44 @@ export function buildCliProgram(): Command {
         }
       } catch (err: unknown) {
         console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 5. zvault migrate <file>
+  program
+    .command('migrate <file>')
+    .description('Migrate secrets from a .env file into NullSec and redact the values in place')
+    .option('-e, --env <environment>', 'Target environment')
+    .option('--storage <mode>', 'Credential store mode (keyring | file)')
+    .option('--dry-run', 'Parse the file and report what would be uploaded without making changes')
+    .action(async (file, options) => {
+      try {
+        const res = await executeMigrate({
+          file,
+          env: options.env,
+          dryRun: options.dryRun,
+          configOverride: options.storage ? { storage: options.storage } : undefined
+        });
+        if (res.dryRun) {
+          console.log(`\x1b[33mDry run\x1b[0m — no changes made.`);
+          console.log(`\nParsed ${res.uploaded.length} entries from ${res.file}:`);
+          for (const key of res.uploaded) {
+            console.log(`  • \x1b[36m${key}\x1b[0m`);
+          }
+          if (res.invalid.length > 0) {
+            console.log(`\nSkipped ${res.invalid.length} malformed line(s):`);
+            for (const inv of res.invalid) {
+              console.log(`  • line ${inv.line}: ${inv.reason}`);
+            }
+          }
+        } else {
+          console.log(`\x1b[32m✔ Migrated ${res.uploaded.length} secret(s) to environment "${res.environment}"\x1b[0m`);
+          console.log(`\x1b[32m✔ Redacted ${res.redactedCount} value(s) in ${res.file}\x1b[0m`);
+        }
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        console.error(`\x1b[33mMigration aborted. The .env file was NOT modified.\x1b[0m`);
         process.exit(1);
       }
     });

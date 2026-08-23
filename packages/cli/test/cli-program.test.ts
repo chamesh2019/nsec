@@ -18,6 +18,7 @@ describe('buildCliProgram', () => {
     assert.ok(commandNames.includes('init'));
     assert.ok(commandNames.includes('set'));
     assert.ok(commandNames.includes('get'));
+    assert.ok(commandNames.includes('migrate'));
     assert.ok(commandNames.includes('member'));
     assert.ok(commandNames.includes('token'));
   });

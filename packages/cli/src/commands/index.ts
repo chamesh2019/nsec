@@ -5,3 +5,4 @@ export * from './secrets.js';
 export * from './member.js';
 export * from './token.js';
 export * from './keys.js';
+export * from './migrate.js';
