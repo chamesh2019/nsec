@@ -1,7 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from '@nsec/server';
-import { MemoryDatabaseAdapter } from '@nsec/server';
+import { createHonoServer, MemoryDatabaseAdapter, serveServer } from '@nsec/server';
 import { createCredentialStore } from '@nsec/keyring';
 import { executeRegister } from '../src/commands/register.js';
 import { executeInvite } from '../src/commands/invite.js';
@@ -15,19 +14,22 @@ import {
 import { executeRotateKeys } from '../src/commands/rotate-keys.js';
 
 describe('Admin, Invite & Key Rotation CLI Commands', () => {
-  let app: any;
+  let server: any;
   let serverUrl: string;
 
   before(async () => {
     const db = new MemoryDatabaseAdapter();
-    app = await createServer({ db });
-    const address = await app.listen({ port: 0, host: '127.0.0.1' });
-    serverUrl = address;
+    const app = createHonoServer({ db });
+    const instance = await serveServer(app);
+    server = instance.server;
+    serverUrl = instance.url;
   });
 
-  after(async () => {
-    await app.close();
+  after(() => {
+    server?.close();
   });
+
+
 
   it('runs full admin invite and key rotation workflow', async () => {
     const adminStore = await createCredentialStore({ mode: 'memory' });

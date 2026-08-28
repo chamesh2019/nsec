@@ -1,28 +1,28 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { Hono } from 'hono';
 import crypto from 'node:crypto';
 import type { DatabaseAdapter } from '../db/types.js';
 import { verifyAuthHeaders, hashToken } from '../middleware/auth.js';
 import type { ServiceTokenDTO } from '@nsec/core';
 
-export const tokenRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {
-  const { db } = opts;
+export function createTokenRoutes(db: DatabaseAdapter): Hono {
+  const router = new Hono();
 
   // POST /api/v1/projects/:id/tokens - Create CI/CD Service Token
-  fastify.post('/api/v1/projects/:id/tokens', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, request.body, db);
+  router.post('/api/v1/projects/:id/tokens', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const auth = await verifyAuthHeaders(c.req.header(), body, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
-    const { id } = request.params as { id: string };
+    const id = c.req.param('id');
     const project = await db.getProject(id);
     if (!project) {
-      return reply.status(404).send({ error: 'NotFoundError', message: `Project ${id} not found` });
+      return c.json({ error: 'NotFoundError', message: `Project ${id} not found` }, 404);
     }
 
-    const body = (request.body as { environment?: string; name?: string; expiresAt?: string }) || {};
     if (!body.environment || !body.name) {
-      return reply.status(400).send({ error: 'ValidationError', message: 'Environment and name are required' });
+      return c.json({ error: 'ValidationError', message: 'Environment and name are required' }, 400);
     }
 
     const tokenId = `tok_${crypto.randomBytes(8).toString('hex')}`;
@@ -50,6 +50,10 @@ export const tokenRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (f
       createdAt: new Date().toISOString()
     };
 
-    return reply.status(201).send(response);
+    return c.json(response, 201);
   });
-};
+
+  return router;
+}
+
+export const tokenRoutes = createTokenRoutes;

@@ -1,24 +1,27 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer, MemoryDatabaseAdapter } from '@nsec/server';
+import { createHonoServer, MemoryDatabaseAdapter, serveServer } from '@nsec/server';
 import { createCredentialStore } from '@nsec/keyring';
 import { executeRegister } from '../src/commands/register.js';
 import { executeDashboard } from '../src/commands/dashboard.js';
 
 describe('CLI executeDashboard Command', () => {
-  let app: any;
+  let server: any;
   let serverUrl: string;
 
   before(async () => {
     const db = new MemoryDatabaseAdapter();
-    app = await createServer({ db });
-    const address = await app.listen({ port: 0, host: '127.0.0.1' });
-    serverUrl = address;
+    const app = createHonoServer({ db });
+    const instance = await serveServer(app);
+    server = instance.server;
+    serverUrl = instance.url;
   });
 
-  after(async () => {
-    await app.close();
+  after(() => {
+    server?.close();
   });
+
+
 
   it('generates a valid authenticated dashboard URL with hash-based login ticket', async () => {
     const store = await createCredentialStore({ mode: 'memory' });

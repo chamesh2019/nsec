@@ -1,14 +1,18 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { Hono } from 'hono';
 import { DASHBOARD_HTML } from './html.js';
 
-export const dashboardRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/dashboard', async (request, reply) => {
-    reply.type('text/html; charset=utf-8');
-    return DASHBOARD_HTML;
+export function createDashboardRoutes(): Hono {
+  const router = new Hono();
+
+  router.get('/dashboard', (c) => {
+    return c.html(DASHBOARD_HTML);
   });
 
-  fastify.get('/dashboard/*', async (request, reply) => {
-    reply.type('text/html; charset=utf-8');
-    return DASHBOARD_HTML;
+  router.get('/dashboard/*', (c) => {
+    return c.html(DASHBOARD_HTML);
   });
-};
+
+  return router;
+}
+
+export const dashboardRoutes = createDashboardRoutes;

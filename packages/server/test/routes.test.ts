@@ -2,23 +2,26 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateUserKeyPair, generateProjectKey, encryptProjectSecrets, encryptProjectKeyForUser } from '@nsec/crypto';
 import { ZVaultApiClient } from '@nsec/core';
-import { createServer } from '../src/server.js';
+import { createHonoServer, serveServer } from '../src/index.js';
 import { MemoryDatabaseAdapter } from '../src/db/index.js';
 
 describe('Server REST API Routes', () => {
-  let app: any;
+  let server: any;
   let serverUrl: string;
 
   before(async () => {
     const db = new MemoryDatabaseAdapter();
-    app = await createServer({ db });
-    const address = await app.listen({ port: 0, host: '127.0.0.1' });
-    serverUrl = address;
+    const app = createHonoServer({ db });
+    const instance = await serveServer(app);
+    server = instance.server;
+    serverUrl = instance.url;
   });
 
-  after(async () => {
-    await app.close();
+  after(() => {
+    server?.close();
   });
+
+
 
   it('completes full user registration, project creation, secret upload, and secret fetch flow', async () => {
     // 1. User A KeyPair & Client

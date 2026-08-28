@@ -1,27 +1,29 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { Hono } from 'hono';
 import { UploadSecretsInputSchema, type SecretsResponseDTO } from '@nsec/core';
 import type { DatabaseAdapter } from '../db/types.js';
 import { verifyAuthHeaders } from '../middleware/auth.js';
 
-export const secretRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {
-  const { db } = opts;
+export function createSecretRoutes(db: DatabaseAdapter): Hono {
+  const router = new Hono();
 
   // PUT /api/v1/projects/:id/environments/:env/secrets - Upload encrypted secrets & project keys
-  fastify.put('/api/v1/projects/:id/environments/:env/secrets', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, request.body, db);
+  router.put('/api/v1/projects/:id/environments/:env/secrets', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const auth = await verifyAuthHeaders(c.req.header(), body, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
-    const { id, env } = request.params as { id: string; env: string };
+    const id = c.req.param('id');
+    const env = c.req.param('env');
     const project = await db.getProject(id);
     if (!project) {
-      return reply.status(404).send({ error: 'NotFoundError', message: `Project ${id} not found` });
+      return c.json({ error: 'NotFoundError', message: `Project ${id} not found` }, 404);
     }
 
-    const parseResult = UploadSecretsInputSchema.safeParse(request.body);
+    const parseResult = UploadSecretsInputSchema.safeParse(body);
     if (!parseResult.success) {
-      return reply.status(400).send({ error: 'ValidationError', message: parseResult.error.message });
+      return c.json({ error: 'ValidationError', message: parseResult.error.message }, 400);
     }
 
     const { secretsPayload, projectKeys } = parseResult.data;
@@ -37,23 +39,24 @@ export const secretRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (
       updatedAt: new Date().toISOString()
     });
 
-    return reply.status(200).send({ success: true, version });
+    return c.json({ success: true, version }, 200);
   });
 
   // GET /api/v1/projects/:id/environments/:env/secrets - Fetch encrypted secrets & user's project key
-  fastify.get('/api/v1/projects/:id/environments/:env/secrets', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, null, db);
+  router.get('/api/v1/projects/:id/environments/:env/secrets', async (c) => {
+    const auth = await verifyAuthHeaders(c.req.header(), null, db);
     if (!auth.authenticated) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
-    const { id, env } = request.params as { id: string; env: string };
+    const id = c.req.param('id');
+    const env = c.req.param('env');
     const secretsRecord = await db.getSecrets(id, env);
     if (!secretsRecord) {
-      return reply.status(404).send({
+      return c.json({
         error: 'NotFoundError',
         message: `No secrets found for project ${id} in environment ${env}`
-      });
+      }, 404);
     }
 
     // Identify requesting identity (user or service token)
@@ -64,17 +67,16 @@ export const secretRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (
     } else if (auth.serviceToken) {
       // Check service token environment match
       if (auth.serviceToken.projectId !== id || auth.serviceToken.environment !== env) {
-        return reply.status(403).send({ error: 'Forbidden', message: 'Service token not authorized for this environment' });
+        return c.json({ error: 'Forbidden', message: 'Service token not authorized for this environment' }, 403);
       }
       encryptedKey = secretsRecord.projectKeys[auth.serviceToken.id];
     }
 
     if (!encryptedKey) {
-      // If no individual key mapping exists for this user, check if any default/admin key exists or reject
-      return reply.status(403).send({
+      return c.json({
         error: 'Forbidden',
         message: `User does not have access to decrypt secrets for environment ${env}. An admin must share the project key.`
-      });
+      }, 403);
     }
 
     const response: SecretsResponseDTO = {
@@ -86,6 +88,10 @@ export const secretRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (
       updatedAt: secretsRecord.updatedAt
     };
 
-    return reply.status(200).send(response);
+    return c.json(response, 200);
   });
-};
+
+  return router;
+}
+
+export const secretRoutes = createSecretRoutes;

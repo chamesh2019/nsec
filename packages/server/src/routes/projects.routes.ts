@@ -1,22 +1,22 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { Hono } from 'hono';
 import crypto from 'node:crypto';
 import { AddMemberInputSchema, type ProjectDTO } from '@nsec/core';
 import type { DatabaseAdapter } from '../db/types.js';
 import { verifyAuthHeaders } from '../middleware/auth.js';
 
-export const projectRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {
-  const { db } = opts;
+export function createProjectRoutes(db: DatabaseAdapter): Hono {
+  const router = new Hono();
 
   // POST /api/v1/projects - Create project
-  fastify.post('/api/v1/projects', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, request.body, db);
+  router.post('/api/v1/projects', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const auth = await verifyAuthHeaders(c.req.header(), body, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
-    const body = (request.body as { name?: string; environments?: string[] }) || {};
     if (!body.name) {
-      return reply.status(400).send({ error: 'ValidationError', message: 'Project name is required' });
+      return c.json({ error: 'ValidationError', message: 'Project name is required' }, 400);
     }
 
     const projectId = `proj_${crypto.randomBytes(8).toString('hex')}`;
@@ -40,47 +40,48 @@ export const projectRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async 
     };
 
     await db.saveProject(newProject);
-    return reply.status(201).send(newProject);
+    return c.json(newProject, 201);
   });
 
   // GET /api/v1/projects/:id - Get project details
-  fastify.get('/api/v1/projects/:id', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, null, db);
+  router.get('/api/v1/projects/:id', async (c) => {
+    const auth = await verifyAuthHeaders(c.req.header(), null, db);
     if (!auth.authenticated) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
-    const { id } = request.params as { id: string };
+    const id = c.req.param('id');
     const project = await db.getProject(id);
     if (!project) {
-      return reply.status(404).send({ error: 'NotFoundError', message: `Project ${id} not found` });
+      return c.json({ error: 'NotFoundError', message: `Project ${id} not found` }, 404);
     }
 
-    return reply.status(200).send(project);
+    return c.json(project, 200);
   });
 
   // POST /api/v1/projects/:id/members - Add/share project key with member
-  fastify.post('/api/v1/projects/:id/members', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, request.body, db);
+  router.post('/api/v1/projects/:id/members', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const auth = await verifyAuthHeaders(c.req.header(), body, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
-    const { id } = request.params as { id: string };
+    const id = c.req.param('id');
     const project = await db.getProject(id);
     if (!project) {
-      return reply.status(404).send({ error: 'NotFoundError', message: `Project ${id} not found` });
+      return c.json({ error: 'NotFoundError', message: `Project ${id} not found` }, 404);
     }
 
-    const parseResult = AddMemberInputSchema.safeParse(request.body);
+    const parseResult = AddMemberInputSchema.safeParse(body);
     if (!parseResult.success) {
-      return reply.status(400).send({ error: 'ValidationError', message: parseResult.error.message });
+      return c.json({ error: 'ValidationError', message: parseResult.error.message }, 400);
     }
 
     const { email, role, environments, environmentKeys } = parseResult.data;
     const targetUser = await db.getUserByEmail(email);
     if (!targetUser) {
-      return reply.status(404).send({ error: 'NotFoundError', message: `User with email ${email} not registered` });
+      return c.json({ error: 'NotFoundError', message: `User with email ${email} not registered` }, 404);
     }
 
     // Add member record
@@ -102,6 +103,10 @@ export const projectRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async 
     }
 
     const updated = await db.getProject(id);
-    return reply.status(200).send(updated);
+    return c.json(updated, 200);
   });
-};
+
+  return router;
+}
+
+export const projectRoutes = createProjectRoutes;

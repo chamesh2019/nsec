@@ -1,26 +1,27 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { Hono } from 'hono';
 import crypto from 'node:crypto';
 import { CreateInviteInputSchema, type InviteTokenDTO } from '@nsec/core';
 import type { DatabaseAdapter, StoredInviteTokenRecord } from '../db/types.js';
 import { verifyAuthHeaders, hashToken } from '../middleware/auth.js';
 
-export const inviteRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {
-  const { db } = opts;
+export function createInviteRoutes(db: DatabaseAdapter): Hono {
+  const router = new Hono();
 
   // POST /api/v1/invites - Create invite token (admin only)
-  fastify.post('/api/v1/invites', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, request.body, db);
+  router.post('/api/v1/invites', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
+    const auth = await verifyAuthHeaders(c.req.header(), body, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
     if (auth.user.role !== 'admin') {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Admin role required to generate invite tokens' });
+      return c.json({ error: 'Forbidden', message: 'Admin role required to generate invite tokens' }, 403);
     }
 
-    const parseResult = CreateInviteInputSchema.safeParse(request.body);
+    const parseResult = CreateInviteInputSchema.safeParse(body);
     if (!parseResult.success) {
-      return reply.status(400).send({ error: 'ValidationError', message: parseResult.error.message });
+      return c.json({ error: 'ValidationError', message: parseResult.error.message }, 400);
     }
 
     const { email, role, expiresAt } = parseResult.data;
@@ -28,17 +29,16 @@ export const inviteRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (
     // Check if user is already registered
     const existing = await db.getUserByEmail(email);
     if (existing) {
-      return reply.status(409).send({
+      return c.json({
         error: 'ConflictError',
         message: `User with email "${email}" is already registered.`
-      });
+      }, 409);
     }
 
     const tokenId = `inv_${crypto.randomBytes(8).toString('hex')}`;
     const rawSecret = crypto.randomBytes(24).toString('hex');
     const fullToken = `ns_inv_${tokenId}_${rawSecret}`;
     const tokenHash = hashToken(fullToken);
-
 
     const record: StoredInviteTokenRecord = {
       id: tokenId,
@@ -62,18 +62,18 @@ export const inviteRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (
       createdAt: record.createdAt
     };
 
-    return reply.status(201).send(response);
+    return c.json(response, 201);
   });
 
   // GET /api/v1/invites - List pending invite tokens (admin only)
-  fastify.get('/api/v1/invites', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, null, db);
+  router.get('/api/v1/invites', async (c) => {
+    const auth = await verifyAuthHeaders(c.req.header(), null, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
     if (auth.user.role !== 'admin') {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Admin role required to view invite tokens' });
+      return c.json({ error: 'Forbidden', message: 'Admin role required to view invite tokens' }, 403);
     }
 
     const invites = await db.listInviteTokens();
@@ -86,23 +86,27 @@ export const inviteRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (
       createdAt: inv.createdAt
     }));
 
-    return reply.status(200).send(safeInvites);
+    return c.json(safeInvites, 200);
   });
 
   // DELETE /api/v1/invites/:id - Revoke invite token (admin only)
-  fastify.delete('/api/v1/invites/:id', async (request, reply) => {
-    const auth = await verifyAuthHeaders(request.headers, null, db);
+  router.delete('/api/v1/invites/:id', async (c) => {
+    const auth = await verifyAuthHeaders(c.req.header(), null, db);
     if (!auth.authenticated || !auth.user) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' });
+      return c.json({ error: 'AuthenticationError', message: auth.error || 'Unauthorized' }, 401);
     }
 
     if (auth.user.role !== 'admin') {
-      return reply.status(403).send({ error: 'Forbidden', message: 'Admin role required to revoke invite tokens' });
+      return c.json({ error: 'Forbidden', message: 'Admin role required to revoke invite tokens' }, 403);
     }
 
-    const { id } = request.params as { id: string };
+    const id = c.req.param('id');
     const success = await db.deleteInviteToken(id);
 
-    return reply.status(200).send({ success });
+    return c.json({ success }, 200);
   });
-};
+
+  return router;
+}
+
+export const inviteRoutes = createInviteRoutes;

@@ -1,46 +1,41 @@
-import Fastify, { type FastifyInstance } from 'fastify';
-import cors from '@fastify/cors';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { MemoryDatabaseAdapter } from './db/memory-adapter.js';
 import type { DatabaseAdapter } from './db/types.js';
-import { authRoutes } from './routes/auth.routes.js';
-import { sessionRoutes } from './routes/session.routes.js';
-import { inviteRoutes } from './routes/invites.routes.js';
-import { projectRoutes } from './routes/projects.routes.js';
-import { secretRoutes } from './routes/secrets.routes.js';
-import { tokenRoutes } from './routes/tokens.routes.js';
-import { dashboardRoutes } from './dashboard/dashboard.js';
+import { createAuthRoutes } from './routes/auth.routes.js';
+import { createSessionRoutes } from './routes/session.routes.js';
+import { createInviteRoutes } from './routes/invites.routes.js';
+import { createProjectRoutes } from './routes/projects.routes.js';
+import { createSecretRoutes } from './routes/secrets.routes.js';
+import { createTokenRoutes } from './routes/tokens.routes.js';
+import { createDashboardRoutes } from './dashboard/dashboard.js';
 
 export interface ServerOptions {
   db?: DatabaseAdapter;
-  logger?: boolean;
 }
 
-export async function createServer(options: ServerOptions = {}): Promise<FastifyInstance> {
+export function createHonoServer(options: ServerOptions = {}): Hono {
   const db = options.db || new MemoryDatabaseAdapter();
-  const fastify = Fastify({
-    logger: options.logger ?? false
-  });
+  const app = new Hono();
 
-  await fastify.register(cors, {
-    origin: true
-  });
+  // Enable CORS
+  app.use('*', cors());
 
   // Health check endpoint
-  fastify.get('/health', async () => {
-    return { status: 'ok', service: 'zvault-server', version: '0.2.0' };
+  app.get('/health', (c) => {
+    return c.json({ status: 'ok', service: 'nullsec-server', version: '0.2.0' });
   });
 
+  // Mount Dashboard & Routes
+  app.route('/', createDashboardRoutes());
+  app.route('/', createSessionRoutes(db));
+  app.route('/', createAuthRoutes(db));
+  app.route('/', createInviteRoutes(db));
+  app.route('/', createProjectRoutes(db));
+  app.route('/', createSecretRoutes(db));
+  app.route('/', createTokenRoutes(db));
 
-  // Register API routes & Web Dashboard
-  await fastify.register(dashboardRoutes);
-  await fastify.register(sessionRoutes, { db });
-  await fastify.register(authRoutes, { db });
-  await fastify.register(inviteRoutes, { db });
-  await fastify.register(projectRoutes, { db });
-  await fastify.register(secretRoutes, { db });
-  await fastify.register(tokenRoutes, { db });
-
-  return fastify;
+  return app;
 }
 
-
+export const createServer = createHonoServer;

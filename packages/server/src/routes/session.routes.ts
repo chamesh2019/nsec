@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from 'fastify';
+import { Hono } from 'hono';
 import { verifySignatureAsync, type SignedMessage } from '@nsec/crypto';
 import type { DatabaseAdapter } from '../db/types.js';
 import { globalSessionStore, extractSessionToken } from '../middleware/session.js';
@@ -10,17 +10,17 @@ export interface DashboardTicketPayload {
   nonce: string;
 }
 
-export const sessionRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async (fastify, opts) => {
-  const { db } = opts;
+export function createSessionRoutes(db: DatabaseAdapter): Hono {
+  const router = new Hono();
 
   // POST /api/v1/auth/session - Exchange cryptographic login ticket for session
-  fastify.post('/api/v1/auth/session', async (request, reply) => {
-    const body = request.body as { ticket?: string } | undefined;
+  router.post('/api/v1/auth/session', async (c) => {
+    const body = await c.req.json().catch(() => ({}));
     if (!body || typeof body.ticket !== 'string') {
-      return reply.status(400).send({
+      return c.json({
         error: 'ValidationError',
         message: 'Missing or invalid "ticket" string in request body'
-      });
+      }, 400);
     }
 
     let signedMessage: SignedMessage<DashboardTicketPayload>;
@@ -28,99 +28,99 @@ export const sessionRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async 
       const decodedJson = Buffer.from(body.ticket, 'base64url').toString('utf-8');
       signedMessage = JSON.parse(decodedJson);
     } catch {
-      return reply.status(400).send({
+      return c.json({
         error: 'ValidationError',
         message: 'Malformed base64url ticket payload'
-      });
+      }, 400);
     }
 
     const { payload, signature, publicKey, timestamp } = signedMessage;
 
     if (!payload || payload.action !== 'dashboard_login' || !payload.email || !payload.nonce) {
-      return reply.status(400).send({
+      return c.json({
         error: 'ValidationError',
         message: 'Invalid ticket structure (must contain action="dashboard_login", email, nonce)'
-      });
+      }, 400);
     }
 
     const now = Date.now();
     if (Math.abs(now - timestamp) > 60_000) {
-      return reply.status(401).send({
+      return c.json({
         error: 'AuthenticationError',
         message: 'Login ticket has expired (must be used within 60 seconds of generation)'
-      });
+      }, 401);
     }
 
     if (globalSessionStore.isNonceUsed(payload.nonce)) {
-      return reply.status(401).send({
+      return c.json({
         error: 'AuthenticationError',
         message: 'Login ticket has already been used (replay detected)'
-      });
+      }, 401);
     }
 
     const isValidSig = await verifySignatureAsync(signedMessage);
     if (!isValidSig) {
-      return reply.status(401).send({
+      return c.json({
         error: 'AuthenticationError',
         message: 'Invalid cryptographic signature in login ticket'
-      });
+      }, 401);
     }
 
     // Lookup user by signing key
     const user = await db.getUserBySigningKey(publicKey);
     if (!user) {
-      return reply.status(401).send({
+      return c.json({
         error: 'AuthenticationError',
         message: 'Public key in ticket is not registered with any server account'
-      });
+      }, 401);
     }
 
     if (user.email.toLowerCase() !== payload.email.toLowerCase()) {
-      return reply.status(400).send({
+      return c.json({
         error: 'ValidationError',
         message: `Ticket email (${payload.email}) does not match registered email (${user.email})`
-      });
+      }, 400);
     }
 
     if (user.role !== 'admin') {
-      return reply.status(403).send({
+      return c.json({
         error: 'Forbidden',
         message: 'Administrator role required to access server web dashboard'
-      });
+      }, 403);
     }
 
     globalSessionStore.markNonceUsed(payload.nonce);
     const session = globalSessionStore.createSession(user);
 
-    reply.header(
+    c.header(
       'Set-Cookie',
       `nsec_session=${encodeURIComponent(session.token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=7200`
     );
 
-    return reply.status(200).send({
+    return c.json({
       token: session.token,
       user: session.user,
       expiresAt: session.expiresAt
-    });
+    }, 200);
   });
 
   // GET /api/v1/auth/session/me - Check active session and fetch dashboard overview stats
-  fastify.get('/api/v1/auth/session/me', async (request, reply) => {
-    const token = extractSessionToken(request.headers);
+  router.get('/api/v1/auth/session/me', async (c) => {
+    const token = extractSessionToken(c.req.header());
     if (!token) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: 'No active session' });
+      return c.json({ error: 'AuthenticationError', message: 'No active session' }, 401);
     }
 
     const session = globalSessionStore.getSession(token);
     if (!session) {
-      return reply.status(401).send({ error: 'AuthenticationError', message: 'Session expired or invalid' });
+      return c.json({ error: 'AuthenticationError', message: 'Session expired or invalid' }, 401);
     }
 
     const allUsers = await db.listUsers();
     const invites = await db.listInviteTokens();
     const projects = await db.getProjectsForUser(session.user.id);
 
-    return reply.status(200).send({
+    return c.json({
       user: session.user,
       stats: {
         totalUsers: allUsers.length,
@@ -129,21 +129,25 @@ export const sessionRoutes: FastifyPluginAsync<{ db: DatabaseAdapter }> = async 
         totalProjects: projects.length
       },
       version: '0.2.0'
-    });
+    }, 200);
   });
 
   // DELETE /api/v1/auth/session - Logout
-  fastify.delete('/api/v1/auth/session', async (request, reply) => {
-    const token = extractSessionToken(request.headers);
+  router.delete('/api/v1/auth/session', async (c) => {
+    const token = extractSessionToken(c.req.header());
     if (token) {
       globalSessionStore.deleteSession(token);
     }
 
-    reply.header(
+    c.header(
       'Set-Cookie',
       'nsec_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
     );
 
-    return reply.status(200).send({ success: true });
+    return c.json({ success: true }, 200);
   });
-};
+
+  return router;
+}
+
+export const sessionRoutes = createSessionRoutes;
