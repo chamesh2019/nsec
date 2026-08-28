@@ -3,16 +3,22 @@ import type { SignedMessage } from './types.js';
 import { InvalidKeyError } from './errors.js';
 
 export function canonicalizeJson(obj: unknown): string {
+  if (obj === undefined) {
+    return '';
+  }
   if (obj === null || typeof obj !== 'object') {
     return JSON.stringify(obj);
   }
   if (Array.isArray(obj)) {
     return '[' + obj.map(canonicalizeJson).join(',') + ']';
   }
-  const keys = Object.keys(obj as Record<string, unknown>).sort();
+  const keys = Object.keys(obj as Record<string, unknown>)
+    .filter((k) => (obj as Record<string, unknown>)[k] !== undefined)
+    .sort();
   const entries = keys.map((k) => `${JSON.stringify(k)}:${canonicalizeJson((obj as Record<string, unknown>)[k])}`);
   return '{' + entries.join(',') + '}';
 }
+
 
 function normalizePem(pem: string): string {
   return pem.replace(/\r\n/g, '\n').trim();

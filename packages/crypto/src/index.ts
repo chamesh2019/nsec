@@ -4,4 +4,5 @@ export * from './symmetric.js';
 export * from './asymmetric.js';
 export * from './signatures.js';
 
-export const CRYPTO_VERSION = '0.1.0';
+export const CRYPTO_VERSION = '0.2.0';
+

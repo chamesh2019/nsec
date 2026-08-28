@@ -1,7 +1,8 @@
 {
   "name": "@nsec/keyring",
-  "version": "0.1.2",
-  "description": "OS Keyring and secure credential storage for zvault",
+  "version": "0.2.0",
+  "description": "OS Keyring and secure credential storage for NullSec / ZVault",
+
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

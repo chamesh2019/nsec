@@ -4,14 +4,20 @@ import {
   SecretsResponseSchema,
   UserSchema,
   ServiceTokenSchema,
+  InviteTokenSchema,
   type ProjectDTO,
   type SecretsResponseDTO,
   type UserDTO,
   type ServiceTokenDTO,
+  type InviteTokenDTO,
+  type CreateInviteInputDTO,
+  type RotateKeysInputDTO,
   type UploadSecretsInputDTO,
   type AddMemberInputDTO,
-  type RegisterUserInputDTO
+  type RegisterUserInputDTO,
+  type ServerUserRole
 } from '../schemas/index.js';
+import { z } from 'zod';
 import { ApiClientError, AuthenticationError, NotFoundError } from '../errors.js';
 
 export interface ApiClientOptions {
@@ -37,9 +43,12 @@ export class NullSecApiClient {
   private async request<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
     const method = options.method || 'GET';
     const url = `${this.serverUrl}${path}`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
+    const headers: Record<string, string> = {};
+
+    if (options.body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+    }
+
 
     if (this.serviceToken) {
       headers['Authorization'] = `Bearer ${this.serviceToken}`;
@@ -95,9 +104,46 @@ export class NullSecApiClient {
     return UserSchema.parse(data);
   }
 
+  async rotateKeys(input: RotateKeysInputDTO): Promise<UserDTO> {
+    const data = await this.request<UserDTO>('/api/v1/auth/rotate-keys', { method: 'POST', body: input });
+    return UserSchema.parse(data);
+  }
+
   async getUser(userIdOrEmail: string): Promise<UserDTO> {
     const data = await this.request<UserDTO>(`/api/v1/users/${encodeURIComponent(userIdOrEmail)}`);
     return UserSchema.parse(data);
+  }
+
+  async listUsers(): Promise<UserDTO[]> {
+    const data = await this.request<UserDTO[]>('/api/v1/users');
+    return z.array(UserSchema).parse(data);
+  }
+
+  async updateUserRole(userId: string, role: ServerUserRole): Promise<UserDTO> {
+    const data = await this.request<UserDTO>(`/api/v1/users/${encodeURIComponent(userId)}/role`, {
+      method: 'PATCH',
+      body: { role }
+    });
+    return UserSchema.parse(data);
+  }
+
+  async createInvite(input: CreateInviteInputDTO): Promise<InviteTokenDTO> {
+    const data = await this.request<InviteTokenDTO>('/api/v1/invites', {
+      method: 'POST',
+      body: input
+    });
+    return InviteTokenSchema.parse(data);
+  }
+
+  async listInvites(): Promise<InviteTokenDTO[]> {
+    const data = await this.request<InviteTokenDTO[]>('/api/v1/invites');
+    return z.array(InviteTokenSchema).parse(data);
+  }
+
+  async revokeInvite(inviteId: string): Promise<{ success: boolean }> {
+    return this.request<{ success: boolean }>(`/api/v1/invites/${encodeURIComponent(inviteId)}`, {
+      method: 'DELETE'
+    });
   }
 
   async createProject(name: string, environments = ['development', 'staging', 'production']): Promise<ProjectDTO> {
@@ -145,3 +191,4 @@ export class NullSecApiClient {
 }
 
 export const ZVaultApiClient = NullSecApiClient;
+

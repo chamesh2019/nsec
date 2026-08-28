@@ -8,6 +8,7 @@ describe('@nsec/core exports', () => {
     assert.ok(core.loadConfig);
     assert.ok(core.ZVaultApiClient);
     assert.ok(core.ZVaultError);
-    assert.equal(core.CORE_VERSION, '0.1.0');
+    assert.equal(core.CORE_VERSION, '0.2.0');
   });
 });
+

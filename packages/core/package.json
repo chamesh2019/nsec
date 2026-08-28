@@ -1,7 +1,7 @@
 {
   "name": "@nsec/core",
-  "version": "0.1.2",
-  "description": "Core schemas, configuration parser, and typed API client for zvault",
+  "version": "0.2.0",
+  "description": "Core schemas, configurations, and API clients for NullSec / ZVault",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

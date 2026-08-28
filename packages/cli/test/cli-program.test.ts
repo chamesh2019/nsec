@@ -13,6 +13,10 @@ describe('buildCliProgram', () => {
     const commandNames = program.commands.map((c) => c.name());
     assert.ok(commandNames.includes('run'));
     assert.ok(commandNames.includes('register'));
+    assert.ok(commandNames.includes('invite'));
+    assert.ok(commandNames.includes('rotate-keys'));
+    assert.ok(commandNames.includes('dashboard'));
+    assert.ok(commandNames.includes('admin'));
     assert.ok(commandNames.includes('whoami'));
     assert.ok(commandNames.includes('keys'));
     assert.ok(commandNames.includes('init'));
@@ -21,5 +25,20 @@ describe('buildCliProgram', () => {
     assert.ok(commandNames.includes('migrate'));
     assert.ok(commandNames.includes('member'));
     assert.ok(commandNames.includes('token'));
+
+
+    // Check register options
+    const registerCmd = program.commands.find((c) => c.name() === 'register');
+    assert.ok(registerCmd);
+    const regFlags = registerCmd.options.map((o) => o.flags);
+    assert.ok(regFlags.some((f) => f.includes('--token')));
+
+    // Check run command options
+    const runCmd = program.commands.find((c) => c.name() === 'run');
+    assert.ok(runCmd);
+    const runOptionFlags = runCmd.options.map((o) => o.flags);
+    assert.ok(runOptionFlags.some((f) => f.includes('--offline')));
+    assert.ok(runOptionFlags.some((f) => f.includes('--no-cache')));
   });
 });
+

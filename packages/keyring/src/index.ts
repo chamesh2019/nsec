@@ -5,4 +5,5 @@ export * from './providers/file.js';
 export * from './providers/os.js';
 export * from './manager.js';
 
-export const KEYRING_VERSION = '0.1.0';
+export const KEYRING_VERSION = '0.2.0';
+

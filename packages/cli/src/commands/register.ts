@@ -8,13 +8,14 @@ export interface RegisterCommandOptions {
   storage?: StorageMode;
   credentialStore?: KeyringStorage;
   project?: string;
+  token?: string;
   skipServerSync?: boolean;
 }
 
 export async function executeRegister(
   email: string,
   options: RegisterCommandOptions = {}
-): Promise<{ email: string; serverUrl: string }> {
+): Promise<{ email: string; serverUrl: string; role?: string }> {
   let serverUrl = options.serverUrl;
   let project = options.project || 'global';
   let storageMode = options.storage || 'keyring';
@@ -28,12 +29,36 @@ export async function executeRegister(
     serverUrl = serverUrl || 'http://localhost:4000';
   }
 
+  const normServerUrl = normalizeServerUrl(serverUrl);
+
   // 1. Generate local User KeyPair (Ed25519 signing + RSA-4096 encryption)
   const userKeys = await generateUserKeyPair();
 
-  // 2. Securely store private keys in OS Keyring or 0o600 file
+  let registeredRole: string | undefined;
+
+  // 2. Register public keys on server
+  if (!options.skipServerSync) {
+    const client = new NullSecApiClient({
+      serverUrl: normServerUrl,
+      signingKeys: {
+        privateKey: userKeys.signing.privateKey,
+        publicKey: userKeys.signing.publicKey
+      }
+    });
+
+    const user = await client.registerUser({
+      email,
+      token: options.token,
+      publicKeys: {
+        signingKey: userKeys.signing.publicKey,
+        encryptionKey: userKeys.encryption.publicKey
+      }
+    });
+    registeredRole = user.role;
+  }
+
+  // 3. Securely store private keys in OS Keyring or 0o600 file upon successful registration
   const store = options.credentialStore || (await createCredentialStore({ mode: storageMode }));
-  const normServerUrl = normalizeServerUrl(serverUrl);
   const serverKey = serverAccountKey(normServerUrl);
   const credentialsPayload = {
     keyId: `key_${Date.now()}`,
@@ -48,24 +73,6 @@ export async function executeRegister(
   await store.saveCredentials(serverKey, credentialsPayload);
   await store.saveCredentials('default', credentialsPayload);
 
-  // 3. Register public keys on server
-  if (!options.skipServerSync) {
-    const client = new NullSecApiClient({
-      serverUrl,
-      signingKeys: {
-        privateKey: userKeys.signing.privateKey,
-        publicKey: userKeys.signing.publicKey
-      }
-    });
-
-    await client.registerUser({
-      email,
-      publicKeys: {
-        signingKey: userKeys.signing.publicKey,
-        encryptionKey: userKeys.encryption.publicKey
-      }
-    });
-  }
-
-  return { email, serverUrl: normServerUrl };
+  return { email, serverUrl: normServerUrl, role: registeredRole };
 }
+

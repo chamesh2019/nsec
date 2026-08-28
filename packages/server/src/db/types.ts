@@ -3,8 +3,10 @@ import type {
   ProjectDTO,
   ProjectMemberDTO,
   ServiceTokenDTO,
+  InviteTokenDTO,
   EncryptedSecretsPayloadDTO,
-  EncryptedProjectKeyDTO
+  EncryptedProjectKeyDTO,
+  ServerUserRole
 } from '@nsec/core';
 
 export interface StoredSecretsRecord {
@@ -20,12 +22,25 @@ export interface StoredServiceTokenRecord extends ServiceTokenDTO {
   tokenHash: string;
 }
 
+export interface StoredInviteTokenRecord extends InviteTokenDTO {
+  tokenHash: string;
+}
+
 export interface DatabaseAdapter {
   // Users
   saveUser(user: UserDTO): Promise<void>;
   getUserById(id: string): Promise<UserDTO | null>;
   getUserByEmail(email: string): Promise<UserDTO | null>;
   getUserBySigningKey(signingKeyPem: string): Promise<UserDTO | null>;
+  listUsers(): Promise<UserDTO[]>;
+  countUsers(): Promise<number>;
+  updateUserRole(userId: string, role: ServerUserRole): Promise<void>;
+
+  // Invites
+  saveInviteToken(record: StoredInviteTokenRecord): Promise<void>;
+  getInviteTokenByHash(tokenHash: string): Promise<StoredInviteTokenRecord | null>;
+  listInviteTokens(): Promise<StoredInviteTokenRecord[]>;
+  deleteInviteToken(tokenId: string): Promise<boolean>;
 
   // Projects
   saveProject(project: ProjectDTO): Promise<void>;
@@ -43,3 +58,4 @@ export interface DatabaseAdapter {
   getServiceTokenByHash(tokenHash: string): Promise<StoredServiceTokenRecord | null>;
   deleteServiceToken(projectId: string, tokenId: string): Promise<boolean>;
 }
+

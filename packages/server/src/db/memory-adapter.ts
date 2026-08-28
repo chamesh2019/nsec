@@ -1,14 +1,23 @@
-import type { DatabaseAdapter, StoredSecretsRecord, StoredServiceTokenRecord } from './types.js';
-import type { UserDTO, ProjectDTO, ProjectMemberDTO } from '@nsec/core';
+import type {
+  DatabaseAdapter,
+  StoredSecretsRecord,
+  StoredServiceTokenRecord,
+  StoredInviteTokenRecord
+} from './types.js';
+import type { UserDTO, ProjectDTO, ProjectMemberDTO, ServerUserRole } from '@nsec/core';
 
 export class MemoryDatabaseAdapter implements DatabaseAdapter {
   private readonly users = new Map<string, UserDTO>();
   private readonly projects = new Map<string, ProjectDTO>();
   private readonly secrets = new Map<string, StoredSecretsRecord>(); // `${projectId}:${env}` -> record
   private readonly serviceTokens = new Map<string, StoredServiceTokenRecord>(); // tokenHash -> record
+  private readonly inviteTokens = new Map<string, StoredInviteTokenRecord>(); // tokenHash -> record
 
   async saveUser(user: UserDTO): Promise<void> {
-    this.users.set(user.id, { ...user });
+    this.users.set(user.id, {
+      ...user,
+      role: user.role || 'member'
+    });
   }
 
   async getUserById(id: string): Promise<UserDTO | null> {
@@ -29,6 +38,43 @@ export class MemoryDatabaseAdapter implements DatabaseAdapter {
       if (u.publicKeys.signingKey.trim() === cleanKey) return { ...u };
     }
     return null;
+  }
+
+  async countUsers(): Promise<number> {
+    return this.users.size;
+  }
+
+  async listUsers(): Promise<UserDTO[]> {
+    return Array.from(this.users.values()).map((u) => ({ ...u }));
+  }
+
+  async updateUserRole(userId: string, role: ServerUserRole): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.role = role;
+    }
+  }
+
+  async saveInviteToken(record: StoredInviteTokenRecord): Promise<void> {
+    this.inviteTokens.set(record.tokenHash, { ...record });
+  }
+
+  async getInviteTokenByHash(tokenHash: string): Promise<StoredInviteTokenRecord | null> {
+    const rec = this.inviteTokens.get(tokenHash);
+    return rec ? { ...rec } : null;
+  }
+
+  async listInviteTokens(): Promise<StoredInviteTokenRecord[]> {
+    return Array.from(this.inviteTokens.values()).map((r) => ({ ...r }));
+  }
+
+  async deleteInviteToken(tokenId: string): Promise<boolean> {
+    for (const [hash, rec] of this.inviteTokens.entries()) {
+      if (rec.id === tokenId) {
+        return this.inviteTokens.delete(hash);
+      }
+    }
+    return false;
   }
 
   async saveProject(project: ProjectDTO): Promise<void> {
@@ -98,3 +144,4 @@ export class MemoryDatabaseAdapter implements DatabaseAdapter {
     return false;
   }
 }
+

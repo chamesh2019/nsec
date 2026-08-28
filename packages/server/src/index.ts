@@ -6,7 +6,8 @@ export * from './db/index.js';
 export * from './middleware/index.js';
 export * from './routes/index.js';
 
-export const SERVER_VERSION = '0.1.0';
+export const SERVER_VERSION = '0.2.0';
+
 
 export async function startServer(options: { port?: number; host?: string } = {}) {
   const port = options.port || parseInt(process.env.PORT || '4000', 10);

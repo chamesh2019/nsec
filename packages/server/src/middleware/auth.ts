@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { verifySignatureAsync, verifySignature } from '@nsec/crypto';
 import type { DatabaseAdapter, StoredServiceTokenRecord } from '../db/types.js';
 import type { UserDTO } from '@nsec/core';
+import { globalSessionStore, extractSessionToken } from './session.js';
 
 const MAX_TIMESTAMP_AGE_MS = 60_000; // 60 seconds
 
@@ -26,9 +27,18 @@ export async function verifyAuthHeaders(
     return Array.isArray(val) ? val[0] : val;
   };
 
-  // 1. Check for Service Token (Bearer Token)
+  // 1. Check for Active Web Dashboard Session (Cookie or Bearer ns_sess_...)
+  const sessionToken = extractSessionToken(headers);
+  if (sessionToken) {
+    const session = globalSessionStore.getSession(sessionToken);
+    if (session) {
+      return { authenticated: true, user: session.user };
+    }
+  }
+
+  // 2. Check for Service Token (Bearer Token)
   const authHeader = getHeader('authorization');
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  if (authHeader && authHeader.startsWith('Bearer ') && !authHeader.startsWith('Bearer ns_sess_')) {
     const token = authHeader.slice(7).trim();
     const tokenHash = hashToken(token);
     const tokenRecord = await db.getServiceTokenByHash(tokenHash);
@@ -41,6 +51,7 @@ export async function verifyAuthHeaders(
     }
     return { authenticated: true, serviceToken: tokenRecord };
   }
+
 
   // 2. Check for Ed25519 Request Signature (Support NullSec, Nsec, and Zvault headers)
   const signature =

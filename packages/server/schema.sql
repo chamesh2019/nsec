@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member',
   signing_key TEXT NOT NULL,
   encryption_key TEXT NOT NULL,
   created_at TEXT NOT NULL
@@ -62,5 +63,18 @@ CREATE TABLE IF NOT EXISTS service_tokens (
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS invite_tokens (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL,
+  token_hash TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member',
+  invited_by TEXT NOT NULL,
+  expires_at TEXT,
+  created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_service_tokens_hash ON service_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_invite_tokens_hash ON invite_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_invite_tokens_email ON invite_tokens(email);
+

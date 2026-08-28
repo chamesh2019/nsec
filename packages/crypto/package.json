@@ -1,7 +1,7 @@
 {
   "name": "@nsec/crypto",
-  "version": "0.1.2",
-  "description": "Zero-knowledge cryptographic primitives for zvault",
+  "version": "0.2.0",
+  "description": "Cryptographic engine for NullSec / ZVault (AES-256-GCM, RSA-OAEP-4096, Ed25519)",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

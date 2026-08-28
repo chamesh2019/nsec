@@ -1,5 +1,10 @@
-import type { DatabaseAdapter, StoredSecretsRecord, StoredServiceTokenRecord } from './types.js';
-import type { UserDTO, ProjectDTO, ProjectMemberDTO } from '@nsec/core';
+import type {
+  DatabaseAdapter,
+  StoredSecretsRecord,
+  StoredServiceTokenRecord,
+  StoredInviteTokenRecord
+} from './types.js';
+import type { UserDTO, ProjectDTO, ProjectMemberDTO, ServerUserRole } from '@nsec/core';
 
 // Cloudflare D1 Database minimal interface
 export interface D1Database {
@@ -37,27 +42,30 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
   async saveUser(user: UserDTO): Promise<void> {
     const cleanSigningKey = user.publicKeys.signingKey.replace(/\r\n/g, '\n').trim();
     const cleanEncKey = user.publicKeys.encryptionKey.replace(/\r\n/g, '\n').trim();
+    const role = user.role || 'member';
 
     const existing = await this.getUserByEmail(user.email);
     if (existing) {
       await this.db
         .prepare(
           `UPDATE users SET
+             role = ?,
              signing_key = ?,
              encryption_key = ?
            WHERE LOWER(email) = LOWER(?)`
         )
-        .bind(cleanSigningKey, cleanEncKey, user.email)
+        .bind(role, cleanSigningKey, cleanEncKey, user.email)
         .run();
     } else {
       await this.db
         .prepare(
-          `INSERT INTO users (id, email, signing_key, encryption_key, created_at)
-           VALUES (?, ?, ?, ?, ?)`
+          `INSERT INTO users (id, email, role, signing_key, encryption_key, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)`
         )
         .bind(
           user.id,
           user.email,
+          role,
           cleanSigningKey,
           cleanEncKey,
           user.createdAt
@@ -76,6 +84,7 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
     return {
       id: row.id,
       email: row.email,
+      role: row.role || 'member',
       publicKeys: {
         signingKey: row.signing_key,
         encryptionKey: row.encryption_key
@@ -94,6 +103,7 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
     return {
       id: row.id,
       email: row.email,
+      role: row.role || 'member',
       publicKeys: {
         signingKey: row.signing_key,
         encryptionKey: row.encryption_key
@@ -113,6 +123,7 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
     return {
       id: row.id,
       email: row.email,
+      role: row.role || 'member',
       publicKeys: {
         signingKey: row.signing_key,
         encryptionKey: row.encryption_key
@@ -120,6 +131,98 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
       createdAt: row.created_at
     };
   }
+
+  async countUsers(): Promise<number> {
+    const row = await this.db
+      .prepare(`SELECT COUNT(*) as count FROM users`)
+      .first<{ count: number }>();
+    return row ? row.count : 0;
+  }
+
+  async listUsers(): Promise<UserDTO[]> {
+    const res = await this.db
+      .prepare(`SELECT * FROM users ORDER BY created_at ASC`)
+      .all<any>();
+
+    return (res.results || []).map((row) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role || 'member',
+      publicKeys: {
+        signingKey: row.signing_key,
+        encryptionKey: row.encryption_key
+      },
+      createdAt: row.created_at
+    }));
+  }
+
+  async updateUserRole(userId: string, role: ServerUserRole): Promise<void> {
+    await this.db
+      .prepare(`UPDATE users SET role = ? WHERE id = ?`)
+      .bind(role, userId)
+      .run();
+  }
+
+  async saveInviteToken(record: StoredInviteTokenRecord): Promise<void> {
+    await this.db
+      .prepare(
+        `INSERT INTO invite_tokens (id, email, token_hash, role, invited_by, expires_at, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        record.id,
+        record.email,
+        record.tokenHash,
+        record.role,
+        record.invitedBy,
+        record.expiresAt || null,
+        record.createdAt
+      )
+      .run();
+  }
+
+  async getInviteTokenByHash(tokenHash: string): Promise<StoredInviteTokenRecord | null> {
+    const row = await this.db
+      .prepare(`SELECT * FROM invite_tokens WHERE token_hash = ?`)
+      .bind(tokenHash)
+      .first<any>();
+
+    if (!row) return null;
+    return {
+      id: row.id,
+      email: row.email,
+      tokenHash: row.token_hash,
+      role: row.role || 'member',
+      invitedBy: row.invited_by,
+      expiresAt: row.expires_at || undefined,
+      createdAt: row.created_at
+    };
+  }
+
+  async listInviteTokens(): Promise<StoredInviteTokenRecord[]> {
+    const res = await this.db
+      .prepare(`SELECT * FROM invite_tokens ORDER BY created_at DESC`)
+      .all<any>();
+
+    return (res.results || []).map((row) => ({
+      id: row.id,
+      email: row.email,
+      tokenHash: row.token_hash,
+      role: row.role || 'member',
+      invitedBy: row.invited_by,
+      expiresAt: row.expires_at || undefined,
+      createdAt: row.created_at
+    }));
+  }
+
+  async deleteInviteToken(tokenId: string): Promise<boolean> {
+    const res = await this.db
+      .prepare(`DELETE FROM invite_tokens WHERE id = ?`)
+      .bind(tokenId)
+      .run();
+    return (res.meta?.changes as number) > 0;
+  }
+
 
   async saveProject(project: ProjectDTO): Promise<void> {
     await this.db

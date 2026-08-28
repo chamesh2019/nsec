@@ -3,6 +3,14 @@ import {
   executeRun,
   executeInit,
   executeRegister,
+  executeInvite,
+  executeRotateKeys,
+  executeDashboard,
+  executeListUsers,
+  executePromoteUser,
+  executeDemoteUser,
+  executeListInvites,
+  executeRevokeInvite,
   executeWhoami,
   executeListKeys,
   executeSet,
@@ -12,10 +20,13 @@ import {
   executeMigrate
 } from './commands/index.js';
 
+
 export * from './runner.js';
 export * from './commands/index.js';
+export * from './cache.js';
 
-export const CLI_VERSION = '0.2.0';
+export const CLI_VERSION = '0.3.0';
+
 
 export function buildCliProgram(): Command {
   const program = new Command();
@@ -32,6 +43,8 @@ export function buildCliProgram(): Command {
     .option('-e, --env <environment>', 'Target project environment (e.g. development, staging, production)')
     .option('--storage <mode>', 'Credential store mode: keyring, file, memory')
     .option('--no-keyring', 'Bypass OS Keyring and use file storage')
+    .option('--offline', 'Run offline using locally cached encrypted secrets')
+    .option('--no-cache', 'Bypass reading and writing to secrets cache')
     .argument('<command...>', 'Command and arguments to execute')
     .allowUnknownOption()
     .action(async (commandArgs, options) => {
@@ -40,6 +53,8 @@ export function buildCliProgram(): Command {
         const exitCode = await executeRun({
           env: options.env,
           configOverride: storageMode ? { storage: storageMode } : undefined,
+          offline: Boolean(options.offline),
+          noCache: options.cache === false,
           command: commandArgs
         });
         process.exit(exitCode);
@@ -55,20 +70,183 @@ export function buildCliProgram(): Command {
     .alias('login')
     .description('Generate local cryptographic keys in OS Keyring and register your public key with the server')
     .option('-s, --server <url>', 'NullSec Server URL')
+    .option('-t, --token <token>', 'Invite token or server bootstrap token')
     .option('--storage <mode>', 'Credential storage mode (keyring | file)')
     .action(async (email, options) => {
       try {
         const res = await executeRegister(email, {
           serverUrl: options.server,
+          token: options.token,
           storage: options.storage
         });
-        console.log(`\x1b[32m✔ Registered identity "${res.email}" with ${res.serverUrl}\x1b[0m`);
+        const roleStr = res.role ? ` (${res.role})` : '';
+        console.log(`\x1b[32m✔ Registered identity "${res.email}"${roleStr} with ${res.serverUrl}\x1b[0m`);
         console.log(`\x1b[32m✔ Private keys saved in local ${options.storage || 'keyring'}\x1b[0m`);
       } catch (err: unknown) {
         console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
         process.exit(1);
       }
     });
+
+  // 3. nsec invite <email>
+  program
+    .command('invite <email>')
+    .description('Generate a single-use invite token for a new user (admin only)')
+    .option('-r, --role <role>', 'Server role for the invitee (admin | member)', 'member')
+    .option('-s, --server <url>', 'NullSec Server URL')
+    .option('--days <days>', 'Invite expiration in days (e.g. 7)')
+    .option('--storage <mode>', 'Credential storage mode')
+    .action(async (email, options) => {
+      try {
+        const days = options.days ? parseInt(options.days, 10) : undefined;
+        const res = await executeInvite(email, {
+          role: options.role,
+          serverUrl: options.server,
+          expiresInDays: days,
+          storage: options.storage
+        });
+        console.log(`\n\x1b[32m✔ Created invite for "${res.email}" (${res.role})\x1b[0m`);
+        console.log(`\n\x1b[1mShare this command with the invitee:\x1b[0m`);
+        console.log(`  \x1b[36m${res.registrationCommand}\x1b[0m\n`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 4. nsec rotate-keys
+  program
+    .command('rotate-keys')
+    .description('Generate a new cryptographic keypair and update your public keys on the server')
+    .option('-s, --server <url>', 'NullSec Server URL')
+    .option('--storage <mode>', 'Credential storage mode')
+    .action(async (options) => {
+      try {
+        const res = await executeRotateKeys({
+          serverUrl: options.server,
+          storage: options.storage
+        });
+        console.log(`\x1b[32m✔ Cryptographic keys rotated for "${res.email}" on ${res.serverUrl}\x1b[0m`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 5. nsec dashboard
+  program
+    .command('dashboard')
+    .description('Open the web administration dashboard with zero-knowledge cryptographic signature login')
+    .option('-s, --server <url>', 'NullSec Server URL')
+    .option('--storage <mode>', 'Credential store mode')
+    .option('--no-open', 'Do not automatically launch system browser')
+    .action(async (options) => {
+      try {
+        const res = await executeDashboard({
+          serverUrl: options.server,
+          storage: options.storage,
+          noOpen: options.open === false
+        });
+        console.log(`\n\x1b[32m✔ Authenticated dashboard URL generated for "${res.email}":\x1b[0m`);
+        console.log(`\n  \x1b[36m\x1b[1m${res.dashboardUrl}\x1b[0m\n`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  // 6. nsec admin <command>
+  const adminCmd = program.command('admin').description('Server administration and user management (admin only)');
+
+
+  adminCmd
+    .command('users')
+    .description('List all registered users on the server')
+    .option('-s, --server <url>', 'Server URL')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (options) => {
+      try {
+        const users = await executeListUsers({ serverUrl: options.server, storage: options.storage });
+        console.log(`\n\x1b[1mRegistered Server Users (${users.length}):\x1b[0m`);
+        for (const u of users) {
+          const roleTag = u.role === 'admin' ? '\x1b[33m[admin]\x1b[0m' : '[member]';
+          console.log(`  • \x1b[36m${u.email}\x1b[0m ${roleTag} (created ${u.createdAt.slice(0, 10)})`);
+        }
+        console.log('');
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  adminCmd
+    .command('promote <email>')
+    .description('Promote a user to server administrator')
+    .option('-s, --server <url>', 'Server URL')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (email, options) => {
+      try {
+        const user = await executePromoteUser(email, { serverUrl: options.server, storage: options.storage });
+        console.log(`\x1b[32m✔ Promoted "${user.email}" to admin\x1b[0m`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  adminCmd
+    .command('demote <email>')
+    .description('Demote an administrator to regular member')
+    .option('-s, --server <url>', 'Server URL')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (email, options) => {
+      try {
+        const user = await executeDemoteUser(email, { serverUrl: options.server, storage: options.storage });
+        console.log(`\x1b[32m✔ Demoted "${user.email}" to member\x1b[0m`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  adminCmd
+    .command('invites')
+    .description('List pending invite tokens')
+    .option('-s, --server <url>', 'Server URL')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (options) => {
+      try {
+        const invites = await executeListInvites({ serverUrl: options.server, storage: options.storage });
+        console.log(`\n\x1b[1mPending Invites (${invites.length}):\x1b[0m`);
+        if (invites.length === 0) {
+          console.log(`  (No pending invites)\n`);
+        } else {
+          for (const inv of invites) {
+            console.log(`  • \x1b[36m${inv.email}\x1b[0m (${inv.role}) - ID: ${inv.id} (invited by ${inv.invitedBy})`);
+          }
+          console.log('');
+        }
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
+  adminCmd
+    .command('revoke-invite <id>')
+    .description('Revoke a pending invite token')
+    .option('-s, --server <url>', 'Server URL')
+    .option('--storage <mode>', 'Credential store mode')
+    .action(async (id, options) => {
+      try {
+        await executeRevokeInvite(id, { serverUrl: options.server, storage: options.storage });
+        console.log(`\x1b[32m✔ Revoked invite "${id}"\x1b[0m`);
+      } catch (err: unknown) {
+        console.error(`\x1b[31mError:\x1b[0m ${(err as Error)?.message}`);
+        process.exit(1);
+      }
+    });
+
 
   // 3. nsec whoami
   program

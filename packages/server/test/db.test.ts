@@ -13,6 +13,7 @@ describe('MemoryDatabaseAdapter', () => {
     const user = {
       id: 'usr_123',
       email: 'dev@example.com',
+      role: 'member' as const,
       publicKeys: {
         signingKey: 'ed25519_pk_pem',
         encryptionKey: 'rsa_pk_pem'
@@ -24,6 +25,33 @@ describe('MemoryDatabaseAdapter', () => {
     assert.deepEqual(await db.getUserById('usr_123'), user);
     assert.deepEqual(await db.getUserByEmail('dev@example.com'), user);
     assert.deepEqual(await db.getUserBySigningKey('ed25519_pk_pem'), user);
+    assert.equal(await db.countUsers(), 1);
+
+    await db.updateUserRole('usr_123', 'admin');
+    const updated = await db.getUserById('usr_123');
+    assert.equal(updated?.role, 'admin');
+  });
+
+  it('manages invite tokens', async () => {
+    const invite = {
+      id: 'inv_123',
+      email: 'invitee@example.com',
+      tokenHash: 'hashed_token_abc',
+      role: 'member' as const,
+      invitedBy: 'admin@example.com',
+      createdAt: new Date().toISOString()
+    };
+
+    await db.saveInviteToken(invite);
+    const retrieved = await db.getInviteTokenByHash('hashed_token_abc');
+    assert.deepEqual(retrieved, invite);
+
+    const list = await db.listInviteTokens();
+    assert.equal(list.length, 1);
+
+    const deleted = await db.deleteInviteToken('inv_123');
+    assert.equal(deleted, true);
+    assert.equal(await db.getInviteTokenByHash('hashed_token_abc'), null);
   });
 
   it('manages projects and environment secrets', async () => {
@@ -59,3 +87,4 @@ describe('MemoryDatabaseAdapter', () => {
     assert.deepEqual(retrieved, secretRecord);
   });
 });
+

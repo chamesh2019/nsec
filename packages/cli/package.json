@@ -1,7 +1,8 @@
 {
   "name": "@nsec/cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "NullSec CLI - Zero-knowledge secret vault for secure process injection and management",
+
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -30,7 +31,9 @@
     "commander": "^15.0.0"
   },
   "devDependencies": {
+    "@nsec/server": "workspace:*",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
   }
 }
+

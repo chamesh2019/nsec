@@ -1,12 +1,12 @@
-import type { KeyringStorage, StoredCredentials } from '@nsec/keyring';
+import type { KeyringStorage, KeyringCredentials } from '@nsec/keyring';
 import { serverAccountKey } from './url-helpers.js';
 
 export async function getRequiredCredentials(
   project: string,
   store: KeyringStorage,
   serverUrl?: string
-): Promise<StoredCredentials> {
-  let creds: StoredCredentials | null = null;
+): Promise<KeyringCredentials> {
+  let creds: KeyringCredentials | null = null;
 
   // 1. Try server-scoped credentials if serverUrl is provided
   if (serverUrl) {

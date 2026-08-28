@@ -3,9 +3,12 @@ import cors from '@fastify/cors';
 import { MemoryDatabaseAdapter } from './db/memory-adapter.js';
 import type { DatabaseAdapter } from './db/types.js';
 import { authRoutes } from './routes/auth.routes.js';
+import { sessionRoutes } from './routes/session.routes.js';
+import { inviteRoutes } from './routes/invites.routes.js';
 import { projectRoutes } from './routes/projects.routes.js';
 import { secretRoutes } from './routes/secrets.routes.js';
 import { tokenRoutes } from './routes/tokens.routes.js';
+import { dashboardRoutes } from './dashboard/dashboard.js';
 
 export interface ServerOptions {
   db?: DatabaseAdapter;
@@ -24,14 +27,20 @@ export async function createServer(options: ServerOptions = {}): Promise<Fastify
 
   // Health check endpoint
   fastify.get('/health', async () => {
-    return { status: 'ok', service: 'zvault-server', version: '0.1.0' };
+    return { status: 'ok', service: 'zvault-server', version: '0.2.0' };
   });
 
-  // Register API routes
+
+  // Register API routes & Web Dashboard
+  await fastify.register(dashboardRoutes);
+  await fastify.register(sessionRoutes, { db });
   await fastify.register(authRoutes, { db });
+  await fastify.register(inviteRoutes, { db });
   await fastify.register(projectRoutes, { db });
   await fastify.register(secretRoutes, { db });
   await fastify.register(tokenRoutes, { db });
 
   return fastify;
 }
+
+
