@@ -74,6 +74,8 @@ importers:
         specifier: ^3.84.0
         version: 3.114.17(@cloudflare/workers-types@4.20260702.1)
 
+  apps/server-docker: {}
+
   packages/cli:
     dependencies:
       '@nsec/core':

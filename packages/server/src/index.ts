@@ -37,15 +37,30 @@ export function serveServer(
   });
 }
 
-export async function startServer(options: { port?: number; host?: string } = {}): Promise<Server> {
+import { SqliteDatabaseAdapter, MemoryDatabaseAdapter, type DatabaseAdapter } from './db/index.js';
+
+export async function startServer(
+  options: { port?: number; host?: string; db?: DatabaseAdapter } = {}
+): Promise<Server> {
   const port = options.port || parseInt(process.env.PORT || '4000', 10);
   const host = options.host || process.env.HOST || '0.0.0.0';
 
-  const app = createHonoServer();
+  let db = options.db;
+  if (!db) {
+    const dbPath = process.env.DATABASE_PATH || process.env.SQLITE_PATH;
+    if (dbPath) {
+      db = new SqliteDatabaseAdapter(dbPath);
+    } else {
+      db = new MemoryDatabaseAdapter();
+    }
+  }
+
+  const app = createHonoServer({ db });
   const { server } = await serveServer(app, { port, hostname: host });
   console.log(`nullsec zero-knowledge server listening at http://${host}:${port}`);
   return server;
 }
+
 
 // If invoked directly from node/tsx
 if (import.meta.url === `file://${process.argv[1]}`) {

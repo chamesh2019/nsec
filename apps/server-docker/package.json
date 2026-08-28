@@ -1,0 +1,13 @@
+{
+  "name": "@nsec/server-docker",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Standalone Docker & Docker Compose deployment for NullSec Server",
+  "license": "MIT",
+  "scripts": {
+    "docker:build": "docker build -f Dockerfile -t nsec-server:latest ../..",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  }
+}

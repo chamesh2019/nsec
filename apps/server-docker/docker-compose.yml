@@ -1,0 +1,27 @@
+services:
+  nullsec-server:
+    build:
+      context: ../..
+      dockerfile: apps/server-docker/Dockerfile
+    container_name: nullsec-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - HOST=0.0.0.0
+      - DATABASE_PATH=/data/nullsec.db
+      - NSEC_BOOTSTRAP_TOKEN=${NSEC_BOOTSTRAP_TOKEN:-}
+    volumes:
+      - nullsec_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  nullsec_data:
+    name: nullsec_data
