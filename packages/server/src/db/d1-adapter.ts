@@ -135,9 +135,12 @@ export class D1DatabaseAdapter implements DatabaseAdapter {
   async countUsers(): Promise<number> {
     const row = await this.db
       .prepare(`SELECT COUNT(*) as count FROM users`)
-      .first<{ count: number }>();
-    return row ? row.count : 0;
+      .first<any>();
+    if (row === null || row === undefined) return 0;
+    if (typeof row === 'number') return row;
+    return Number(row.count ?? row['COUNT(*)'] ?? Object.values(row)[0] ?? 0);
   }
+
 
   async listUsers(): Promise<UserDTO[]> {
     const res = await this.db
