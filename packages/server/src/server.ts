@@ -35,7 +35,19 @@ export function createHonoServer(options: ServerOptions = {}): Hono {
   app.route('/', createSecretRoutes(db));
   app.route('/', createTokenRoutes(db));
 
+
+  // Error handler
+  app.onError((err, c) => {
+    console.error('Server Exception:', err);
+    return c.json({
+      error: err.name || 'InternalServerError',
+      message: err.message || 'Internal Server Error'
+    }, 500);
+  });
+
   return app;
 }
+
+
 
 export const createServer = createHonoServer;
