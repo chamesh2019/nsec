@@ -1,10 +1,6 @@
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
-
-const require = createRequire(import.meta.url);
-const { DatabaseSync } = require('node:sqlite');
-
 import type {
   DatabaseAdapter,
   StoredSecretsRecord,
@@ -28,9 +24,13 @@ export class SqliteDatabaseAdapter implements DatabaseAdapter {
         fs.mkdirSync(dir, { recursive: true });
       }
     }
-    this.db = new (DatabaseSync as any)(dbPath);
+    const req = createRequire(import.meta.url || 'file:///app/index.js');
+    const { DatabaseSync } = req('node:sqlite');
+    this.db = new DatabaseSync(dbPath);
     this.initSchema();
   }
+
+
 
   private initSchema(): void {
     this.db.exec(`
